@@ -9,6 +9,8 @@ interface AldaBridge {
   sendOverlayAnswer: (answer: string) => void;
   onOverlayAnswer: (callback: (answer: string) => void) => void;
   closeOverlay: () => void;
+  setMouseIgnore: (ignore: boolean, forward?: boolean) => void;
+  onToggleSpotlight: (callback: () => void) => void;
   onStealthMode: (callback: (enabled: boolean) => void) => void;
 }
 

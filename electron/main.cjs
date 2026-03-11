@@ -19,20 +19,35 @@ const START_URL = process.env.ELECTRON_START_URL || "http://localhost:3000";
 
 // ─── Main Window ─────────────────────────────────────────
 function createMainWindow() {
+  const { screen } = require("electron");
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  const { x, y } = primaryDisplay.workArea;
+
   mainWindow = new BrowserWindow({
-    width: 1300,
-    height: 900,
-    minWidth: 800,
-    minHeight: 600,
-    title: "ALDA",
-    titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 15, y: 15 },
+    width,
+    height,
+    x,
+    y,
+    transparent: true,
+    frame: false,
+    hasShadow: false,
+    resizable: false,
+    movable: false,
+    fullscreenable: false,
+    alwaysOnTop: true,
+    skipTaskbar: false,
+    backgroundColor: "#00000000",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+
+  mainWindow.setAlwaysOnTop(true, "floating");
+  mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  mainWindow.setIgnoreMouseEvents(true, { forward: true });
 
   mainWindow.loadURL(START_URL);
 
@@ -231,6 +246,14 @@ function registerShortcuts() {
   globalShortcut.register("CommandOrControl+Shift+O", () => {
     toggleOverlay();
   });
+
+  // Toggle Spotlight search
+  globalShortcut.register("CommandOrControl+K", () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.webContents.send("toggle-spotlight");
+    }
+  });
 }
 
 // ─── IPC Handlers ────────────────────────────────────────
@@ -253,6 +276,18 @@ function setupIPC() {
   ipcMain.on("close-overlay", () => {
     if (overlayWindow) {
       overlayWindow.hide();
+    }
+  });
+
+  // Click-through toggle for transparent window areas
+  ipcMain.on("set-ignore-mouse-events", (event, ignore, forward) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      if (ignore) {
+        win.setIgnoreMouseEvents(true, { forward: !!forward });
+      } else {
+        win.setIgnoreMouseEvents(false);
+      }
     }
   });
 }

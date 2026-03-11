@@ -31,6 +31,16 @@ contextBridge.exposeInMainWorld("alda", {
     ipcRenderer.send("close-overlay");
   },
 
+  // Click-through control for transparent window
+  setMouseIgnore: (ignore, forward) => {
+    ipcRenderer.send("set-ignore-mouse-events", ignore, forward);
+  },
+
+  // Spotlight toggle from global shortcut
+  onToggleSpotlight: (callback) => {
+    ipcRenderer.on("toggle-spotlight", () => callback());
+  },
+
   // Stealth mode notification
   onStealthMode: (callback) => {
     ipcRenderer.on("stealth-mode", (_event, enabled) => callback(enabled));
