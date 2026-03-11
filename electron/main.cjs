@@ -9,12 +9,14 @@ const {
   nativeImage,
 } = require("electron");
 const path = require("node:path");
+const { execFile } = require("node:child_process");
 
 // ─── State ───────────────────────────────────────────────
 let mainWindow = null;
 let overlayWindow = null;
 let tray = null;
 let stealthMode = false;
+let activeAppInterval = null;
 const START_URL = process.env.ELECTRON_START_URL || "http://localhost:3000";
 
 // ─── Main Window ─────────────────────────────────────────
@@ -45,9 +47,19 @@ function createMainWindow() {
     },
   });
 
-  mainWindow.setAlwaysOnTop(true, "floating");
+  mainWindow.setAlwaysOnTop(true, "screen-saver", 1);
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   mainWindow.setIgnoreMouseEvents(true, { forward: true });
+
+  // macOS: keep on all Spaces & above Mission Control
+  if (process.platform === "darwin") {
+    // collectionBehavior: canJoinAllSpaces | stationary | fullScreenAuxiliary
+    try {
+      app.dock.hide(); // remove from Dock so it behaves like a utility
+    } catch {
+      // dock may already be hidden
+    }
+  }
 
   mainWindow.loadURL(START_URL);
 
@@ -292,12 +304,42 @@ function setupIPC() {
   });
 }
 
+// ─── Active App Detection ────────────────────────────────
+function startActiveAppPolling() {
+  if (process.platform !== "darwin") return;
+
+  const script = `
+tell application "System Events"
+  set frontApp to first application process whose frontmost is true
+  set appName to name of frontApp
+  set appBundle to bundle identifier of frontApp
+  return appName & "|" & appBundle
+end tell
+  `.trim();
+
+  activeAppInterval = setInterval(() => {
+    if (!mainWindow) return;
+    execFile("osascript", ["-e", script], { timeout: 2000 }, (err, stdout) => {
+      if (err || !stdout) return;
+      const parts = stdout.trim().split("|");
+      if (parts.length >= 2) {
+        const name = parts[0];
+        const bundleId = parts[1];
+        // Ignore ourselves
+        if (bundleId === "com.electron.alda" || name === "Electron") return;
+        mainWindow.webContents.send("active-app-changed", { name, bundleId });
+      }
+    });
+  }, 1500); // poll every 1.5s
+}
+
 // ─── App Lifecycle ───────────────────────────────────────
 app.whenReady().then(() => {
   createMainWindow();
   createTray();
   registerShortcuts();
   setupIPC();
+  startActiveAppPolling();
 
   app.on("activate", () => {
     if (!mainWindow) {
@@ -316,6 +358,7 @@ app.on("window-all-closed", () => {
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+  if (activeAppInterval) clearInterval(activeAppInterval);
 });
 
 app.on("before-quit", () => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   BarChart3,
@@ -10,6 +11,7 @@ import {
   MessageSquareReply,
   Mic,
   Sparkles,
+  Monitor,
 } from "lucide-react";
 
 const WIDGETS = [
@@ -64,7 +66,33 @@ const WIDGETS = [
   },
 ];
 
+// Map known bundle IDs to friendly context hints
+const APP_CONTEXT: Record<string, { label: string; hint: string }> = {
+  "com.microsoft.VSCode": { label: "VS Code", hint: "Coaching: peça help com código" },
+  "com.apple.Safari": { label: "Safari", hint: "Transcrição: resuma a página" },
+  "com.google.Chrome": { label: "Chrome", hint: "Transcrição: resuma a página" },
+  "us.zoom.xos": { label: "Zoom", hint: "Coaching ao vivo disponível" },
+  "com.microsoft.teams2": { label: "Teams", hint: "Coaching ao vivo disponível" },
+  "com.apple.MobileSMS": { label: "Mensagens", hint: "Follow-up: gere resposta" },
+  "com.microsoft.Outlook": { label: "Outlook", hint: "Follow-up: gere resposta" },
+  "com.apple.mail": { label: "Mail", hint: "Follow-up: gere resposta" },
+  "com.tinyspeck.slackmacgap": { label: "Slack", hint: "Coaching: prepare resposta" },
+  "com.apple.dt.Xcode": { label: "Xcode", hint: "Coaching: peça help com código" },
+  "com.apple.iWork.Keynote": { label: "Keynote", hint: "Preparação: ensaie a apresentação" },
+  "com.microsoft.Powerpoint": { label: "PowerPoint", hint: "Preparação: ensaie a apresentação" },
+  "com.apple.finder": { label: "Finder", hint: "" },
+};
+
 export default function DashboardPage() {
+  const [activeApp, setActiveApp] = useState<{ name: string; bundleId: string } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.alda) return;
+    window.alda.onActiveAppChanged((info) => setActiveApp(info));
+  }, []);
+
+  const ctx = activeApp ? APP_CONTEXT[activeApp.bundleId] : null;
+  const appLabel = ctx?.label || activeApp?.name || null;
   return (
     <div className="h-full flex items-end justify-end pb-14 pr-2">
       <div
@@ -76,9 +104,17 @@ export default function DashboardPage() {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400">
             <Sparkles className="h-3.5 w-3.5 text-white" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-gray-900 dark:text-white">ALDA</p>
-            <p className="text-[9px] text-gray-500 dark:text-gray-400">⌘K buscar · ⌘⇧A toggle</p>
+            {appLabel ? (
+              <p className="text-[9px] text-gray-500 dark:text-gray-400 truncate flex items-center gap-1">
+                <Monitor className="h-2.5 w-2.5 shrink-0" />
+                {appLabel}
+                {ctx?.hint && <span className="opacity-60">· {ctx.hint}</span>}
+              </p>
+            ) : (
+              <p className="text-[9px] text-gray-500 dark:text-gray-400">⌘K buscar · ⌘⇧A toggle</p>
+            )}
           </div>
         </div>
 

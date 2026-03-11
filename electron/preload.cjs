@@ -45,4 +45,9 @@ contextBridge.exposeInMainWorld("alda", {
   onStealthMode: (callback) => {
     ipcRenderer.on("stealth-mode", (_event, enabled) => callback(enabled));
   },
+
+  // Active app detection (macOS)
+  onActiveAppChanged: (callback) => {
+    ipcRenderer.on("active-app-changed", (_event, appInfo) => callback(appInfo));
+  },
 });

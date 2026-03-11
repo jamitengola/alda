@@ -12,6 +12,7 @@ interface AldaBridge {
   setMouseIgnore: (ignore: boolean, forward?: boolean) => void;
   onToggleSpotlight: (callback: () => void) => void;
   onStealthMode: (callback: (enabled: boolean) => void) => void;
+  onActiveAppChanged: (callback: (appInfo: { name: string; bundleId: string }) => void) => void;
 }
 
 interface Window {
