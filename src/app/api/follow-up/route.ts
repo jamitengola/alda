@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, getProviderLabel } from "@/lib/ai-provider";
+import { saveFollowup, listFollowups } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as { context?: string };
   const context = body.context?.trim() ?? "";
 
-  const followup = [
+  const fallback = [
     "Assunto: Follow-up da sessão",
     "",
     "Olá,",
@@ -19,12 +20,22 @@ export async function POST(request: NextRequest) {
     "ALDA Assistant",
   ].join("\n");
 
+  const provider = getProviderLabel();
+
   const aiFollowup = await generateText({
     system:
       "Você escreve emails de follow-up profissionais em português, curtos e orientados a ação.",
     user: `Gere um follow-up com base neste contexto:\n${context || "Sem contexto"}`,
-    fallback: followup,
+    fallback,
   });
 
-  return NextResponse.json({ followup: aiFollowup, provider: getProviderLabel() });
+  // Persist to SQLite
+  saveFollowup(context, aiFollowup, provider);
+
+  return NextResponse.json({ followup: aiFollowup, provider });
+}
+
+export async function GET() {
+  const items = listFollowups();
+  return NextResponse.json({ items });
 }

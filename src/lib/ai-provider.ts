@@ -6,6 +6,12 @@ type GenerateTextInput = {
   fallback: string;
 };
 
+type ProviderStatus = {
+  provider: Provider;
+  ollamaRemote: boolean;
+  needsApiKeyWarning: boolean;
+};
+
 function getProvider(): Provider {
   const raw = (process.env.AI_PROVIDER ?? "mock").toLowerCase();
   if (raw === "ollama" || raw === "openai" || raw === "mock") {
@@ -105,4 +111,21 @@ export async function generateText(input: GenerateTextInput) {
 
 export function getProviderLabel() {
   return getProvider();
+}
+
+function isLikelyRemoteUrl(url: string) {
+  return !/localhost|127\.0\.0\.1|\[::1\]/i.test(url);
+}
+
+export function getProviderStatus(): ProviderStatus {
+  const provider = getProvider();
+  const baseUrl = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
+  const hasApiKey = Boolean(process.env.OLLAMA_API_KEY);
+  const ollamaRemote = provider === "ollama" && isLikelyRemoteUrl(baseUrl);
+
+  return {
+    provider,
+    ollamaRemote,
+    needsApiKeyWarning: ollamaRemote && !hasApiKey,
+  };
 }
