@@ -14,6 +14,7 @@ const path = require("node:path");
 let mainWindow = null;
 let overlayWindow = null;
 let tray = null;
+let stealthMode = false;
 const START_URL = process.env.ELECTRON_START_URL || "http://localhost:3000";
 
 // ─── Main Window ─────────────────────────────────────────
@@ -34,6 +35,11 @@ function createMainWindow() {
   });
 
   mainWindow.loadURL(START_URL);
+
+  // Apply stealth if already active
+  if (stealthMode) {
+    mainWindow.setContentProtection(true);
+  }
 
   // Hide instead of close on macOS
   mainWindow.on("close", (e) => {
@@ -77,6 +83,11 @@ function createOverlayWindow() {
   overlayWindow.loadURL(`${START_URL}/overlay`);
   overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
+  // Apply stealth if already active
+  if (stealthMode) {
+    overlayWindow.setContentProtection(true);
+  }
+
   overlayWindow.on("closed", () => {
     overlayWindow = null;
   });
@@ -88,6 +99,27 @@ function toggleOverlay() {
   } else {
     createOverlayWindow();
   }
+}
+
+// ─── Stealth Mode ────────────────────────────────────────
+function setStealthMode(enabled) {
+  stealthMode = enabled;
+  if (mainWindow) {
+    mainWindow.setContentProtection(enabled);
+  }
+  if (overlayWindow) {
+    overlayWindow.setContentProtection(enabled);
+  }
+  // Notify renderer so it can show a badge
+  if (mainWindow) {
+    mainWindow.webContents.send("stealth-mode", enabled);
+  }
+  // Rebuild tray to update the checkbox
+  if (tray) createTray();
+}
+
+function toggleStealth() {
+  setStealthMode(!stealthMode);
 }
 
 // ─── System Tray ─────────────────────────────────────────
@@ -113,14 +145,22 @@ function createTray() {
       label: "Overlay assistente",
       click: () => toggleOverlay(),
     },
+    {
+      label: stealthMode ? "✓ Stealth Mode (ativo)" : "Stealth Mode",
+      click: () => toggleStealth(),
+    },
     { type: "separator" },
     {
       label: "Transcrição",
       click: () => navigateTo("/transcricao"),
     },
     {
-      label: "Assistente",
+      label: "Coaching",
       click: () => navigateTo("/assistente"),
+    },
+    {
+      label: "Preparação",
+      click: () => navigateTo("/preparacao"),
     },
     {
       label: "Plano de Estudos",
@@ -180,6 +220,11 @@ function registerShortcuts() {
       mainWindow.webContents.send("navigate", "/transcricao");
       mainWindow.webContents.send("quick-record");
     }
+  });
+
+  // Toggle stealth mode
+  globalShortcut.register("CommandOrControl+Shift+S", () => {
+    toggleStealth();
   });
 
   // Toggle overlay

@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import {
+  BarChart3,
   BookOpen,
   BrainCircuit,
+  ClipboardList,
   FileText,
   MessageSquareReply,
   Mic,
@@ -21,9 +23,16 @@ const MODULES = [
   {
     href: "/assistente",
     icon: BrainCircuit,
-    title: "Assistente Tempo Real",
-    desc: "Receba sugestões de resposta durante reuniões e chamadas.",
+    title: "Coaching em Tempo Real",
+    desc: "A IA ouve você e sugere respostas, argumentos e réplicas ao vivo.",
     color: "text-blue-500",
+  },
+  {
+    href: "/preparacao",
+    icon: ClipboardList,
+    title: "Preparação de Reunião",
+    desc: "Briefing estratégico com objeções antecipadas e pontos-chave.",
+    color: "text-cyan-500",
   },
   {
     href: "/estudos",
@@ -45,6 +54,13 @@ const MODULES = [
     title: "Base de Conhecimento",
     desc: "Guarde e consulte o seu material de estudo com RAG.",
     color: "text-purple-500",
+  },
+  {
+    href: "/performance",
+    icon: BarChart3,
+    title: "Performance",
+    desc: "Métricas e histórico das suas sessões de coaching.",
+    color: "text-pink-500",
   },
 ];
 

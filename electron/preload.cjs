@@ -30,4 +30,9 @@ contextBridge.exposeInMainWorld("alda", {
   closeOverlay: () => {
     ipcRenderer.send("close-overlay");
   },
+
+  // Stealth mode notification
+  onStealthMode: (callback) => {
+    ipcRenderer.on("stealth-mode", (_event, enabled) => callback(enabled));
+  },
 });

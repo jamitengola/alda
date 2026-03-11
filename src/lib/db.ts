@@ -54,6 +54,16 @@ export function getDb(): Database.Database {
       embedding TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS coaching_sessions (
+      id TEXT PRIMARY KEY,
+      duration INTEGER NOT NULL DEFAULT 0,
+      word_count INTEGER NOT NULL DEFAULT 0,
+      suggestions_used INTEGER NOT NULL DEFAULT 0,
+      mode TEXT NOT NULL DEFAULT 'coaching',
+      topic TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   // Migration: add embedding column if it doesn't exist (for existing DBs)
@@ -185,4 +195,60 @@ export function queryKnowledgeDb(query: string) {
     content: string;
     created_at: string;
   }[];
+}
+
+// ─── Coaching Sessions (Performance) ─────────────────────
+
+export function saveCoachingSession(
+  duration: number,
+  wordCount: number,
+  suggestionsUsed: number,
+  mode: string,
+  topic: string
+) {
+  const db = getDb();
+  const id = crypto.randomUUID();
+  db.prepare(
+    `INSERT INTO coaching_sessions (id, duration, word_count, suggestions_used, mode, topic) VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(id, duration, wordCount, suggestionsUsed, mode, topic);
+  return id;
+}
+
+export function listCoachingSessions(limit = 30) {
+  const db = getDb();
+  return db
+    .prepare(`SELECT * FROM coaching_sessions ORDER BY created_at DESC LIMIT ?`)
+    .all(limit) as {
+    id: string;
+    duration: number;
+    word_count: number;
+    suggestions_used: number;
+    mode: string;
+    topic: string;
+    created_at: string;
+  }[];
+}
+
+export function getCoachingStats() {
+  const db = getDb();
+  const row = db
+    .prepare(
+      `SELECT 
+        COUNT(*) as total_sessions,
+        COALESCE(SUM(duration), 0) as total_duration,
+        COALESCE(SUM(word_count), 0) as total_words,
+        COALESCE(SUM(suggestions_used), 0) as total_suggestions,
+        COALESCE(AVG(duration), 0) as avg_duration,
+        COALESCE(AVG(word_count), 0) as avg_words
+      FROM coaching_sessions`
+    )
+    .get() as {
+    total_sessions: number;
+    total_duration: number;
+    total_words: number;
+    total_suggestions: number;
+    avg_duration: number;
+    avg_words: number;
+  };
+  return row;
 }

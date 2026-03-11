@@ -9,6 +9,7 @@ interface AldaBridge {
   sendOverlayAnswer: (answer: string) => void;
   onOverlayAnswer: (callback: (answer: string) => void) => void;
   closeOverlay: () => void;
+  onStealthMode: (callback: (enabled: boolean) => void) => void;
 }
 
 interface Window {

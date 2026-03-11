@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BarChart3,
   BookOpen,
   BrainCircuit,
+  ClipboardList,
   FileText,
   LayoutDashboard,
   MessageSquareReply,
@@ -14,10 +16,12 @@ import {
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transcricao", label: "Transcrição", icon: Mic },
-  { href: "/assistente", label: "Assistente", icon: BrainCircuit },
+  { href: "/assistente", label: "Coaching", icon: BrainCircuit },
+  { href: "/preparacao", label: "Preparação", icon: ClipboardList },
   { href: "/estudos", label: "Estudos", icon: BookOpen },
   { href: "/followup", label: "Follow-up", icon: MessageSquareReply },
   { href: "/conhecimento", label: "Conhecimento", icon: FileText },
+  { href: "/performance", label: "Performance", icon: BarChart3 },
 ];
 
 export default function Sidebar() {
@@ -51,7 +55,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="border-t px-5 py-3 text-xs opacity-50">
-        ALDA Assistant v0.1
+        ALDA v0.3
       </div>
     </aside>
   );

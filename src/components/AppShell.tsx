@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { ShieldCheck } from "lucide-react";
 import { useElectronNav } from "@/hooks/useElectronNav";
 import Sidebar from "@/components/Sidebar";
 import ProviderBadge from "@/components/ProviderBadge";
@@ -12,6 +14,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const pathname = usePathname();
   const isOverlay = pathname === "/overlay";
+  const [stealth, setStealth] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.alda) {
+      window.alda.onStealthMode((enabled) => setStealth(enabled));
+    }
+  }, []);
 
   // Overlay page gets no chrome — just the raw content
   if (isOverlay) {
@@ -27,6 +36,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             Assistente Local de Desenvolvimento e Aprendizagem
           </span>
           <div className="flex items-center gap-3">
+            {stealth && (
+              <span className="flex items-center gap-1.5 rounded-full bg-green-100 dark:bg-green-900 px-3 py-1 text-xs font-medium text-green-700 dark:text-green-300">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Stealth
+              </span>
+            )}
             <ProviderBadge />
             <ThemeToggle />
           </div>
