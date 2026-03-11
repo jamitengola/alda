@@ -27,12 +27,17 @@ interface SpeechRecognitionEvent extends Event {
   readonly results: SpeechRecognitionResultList;
 }
 
+interface SpeechRecognitionErrorEvent extends Event {
+  readonly error: string;
+  readonly message?: string;
+}
+
 type SpeechRecognitionInstance = {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
   onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: Event) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
   onend: (() => void) | null;
   start: () => void;
   stop: () => void;
@@ -47,6 +52,7 @@ type SpeechRecognitionHook = {
   stop: () => void;
   reset: () => void;
   elapsed: number;
+  error: string | null;
 };
 
 export default function useSpeechRecognition(lang = "pt-BR"): SpeechRecognitionHook {
@@ -54,8 +60,10 @@ export default function useSpeechRecognition(lang = "pt-BR"): SpeechRecognitionH
   const [transcript, setTranscript] = useState("");
   const [interimText, setInterimText] = useState("");
   const [elapsed, setElapsed] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const shouldRestartRef = useRef(false);
 
   const isSupported =
     typeof window !== "undefined" &&
@@ -95,13 +103,27 @@ export default function useSpeechRecognition(lang = "pt-BR"): SpeechRecognitionH
       setInterimText(interim);
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      const errType = event.error;
+      // "no-speech" and "aborted" are non-fatal — recognition auto-restarts
+      if (errType === "no-speech" || errType === "aborted") return;
+      setError(errType);
+      shouldRestartRef.current = false;
       setIsListening(false);
     };
 
     recognition.onend = () => {
-      setIsListening(false);
       setInterimText("");
+      // Auto-restart if still supposed to be listening (browser may stop after ~60s)
+      if (shouldRestartRef.current && recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+          return; // keep isListening true, keep timer going
+        } catch {
+          // ignore — fall through to stop
+        }
+      }
+      setIsListening(false);
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -109,6 +131,8 @@ export default function useSpeechRecognition(lang = "pt-BR"): SpeechRecognitionH
     };
 
     recognitionRef.current = recognition;
+    shouldRestartRef.current = true;
+    setError(null);
     recognition.start();
     setIsListening(true);
     setElapsed(0);
@@ -120,6 +144,7 @@ export default function useSpeechRecognition(lang = "pt-BR"): SpeechRecognitionH
   }, [isSupported, lang]);
 
   const stop = useCallback(() => {
+    shouldRestartRef.current = false;
     recognitionRef.current?.stop();
     setIsListening(false);
     setInterimText("");
@@ -133,14 +158,16 @@ export default function useSpeechRecognition(lang = "pt-BR"): SpeechRecognitionH
     stop();
     setTranscript("");
     setElapsed(0);
+    setError(null);
   }, [stop]);
 
   useEffect(() => {
     return () => {
+      shouldRestartRef.current = false;
       recognitionRef.current?.stop();
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
 
-  return { isListening, isSupported, transcript, interimText, start, stop, reset, elapsed };
+  return { isListening, isSupported, transcript, interimText, start, stop, reset, elapsed, error };
 }

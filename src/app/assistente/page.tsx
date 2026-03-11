@@ -10,11 +10,13 @@ import {
   RotateCcw,
   Save,
   Radio,
+  AlertCircle,
 } from "lucide-react";
 import ResultCard from "@/components/ResultCard";
 import Skeleton from "@/components/Skeleton";
 import { toast } from "@/components/Toast";
 import useSpeechRecognition from "@/hooks/useSpeechRecognition";
+import { formatTime } from "@/lib/utils";
 
 type CoachingMode = "coaching" | "objection" | "question";
 
@@ -23,12 +25,6 @@ const MODES: { key: CoachingMode; label: string; icon: typeof Zap; color: string
   { key: "objection", label: "Objeções", icon: ShieldCheck, color: "text-amber-400", bg: "bg-amber-600" },
   { key: "question", label: "Perguntas", icon: HelpCircle, color: "text-purple-400", bg: "bg-purple-600" },
 ];
-
-function formatTime(seconds: number) {
-  const m = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const s = (seconds % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
-}
 
 export default function AssistentePage() {
   const [mode, setMode] = useState<CoachingMode>("coaching");
@@ -41,6 +37,18 @@ export default function AssistentePage() {
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const speech = useSpeechRecognition("pt-BR");
+  const speechRef = useRef(speech);
+  speechRef.current = speech;
+
+  // Quick-record shortcut also works on coaching page — starts listening
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.alda?.onQuickRecord) return;
+    window.alda.onQuickRecord(() => {
+      if (!speechRef.current.isListening) {
+        speechRef.current.start();
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fullTranscript =
     speech.transcript + (speech.interimText ? ` ${speech.interimText}` : "");
@@ -208,6 +216,12 @@ export default function AssistentePage() {
               <span>{wordCount} pal</span>
               <span>{suggestionsCount} sug</span>
             </div>
+          )}
+          {speech.error && (
+            <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+              <AlertCircle className="h-3.5 w-3.5" />
+              {speech.error === "not-allowed" ? "Permissão de microfone negada" : `Erro: ${speech.error}`}
+            </span>
           )}
         </div>
 

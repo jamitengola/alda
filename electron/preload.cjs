@@ -50,4 +50,9 @@ contextBridge.exposeInMainWorld("alda", {
   onActiveAppChanged: (callback) => {
     ipcRenderer.on("active-app-changed", (_event, appInfo) => callback(appInfo));
   },
+
+  // Toggle UI visibility (hide/show widgets & dock)
+  onToggleUI: (callback) => {
+    ipcRenderer.on("toggle-ui-visibility", () => callback());
+  },
 });

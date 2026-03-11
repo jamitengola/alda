@@ -1,17 +1,12 @@
 "use client";
 
-import { FormEvent, useState, useEffect } from "react";
-import { Mic, MicOff, RotateCcw, FileText, Keyboard, Radio } from "lucide-react";
+import { FormEvent, useState, useEffect, useRef } from "react";
+import { Mic, MicOff, RotateCcw, FileText, Keyboard, Radio, AlertCircle } from "lucide-react";
 import LoadingButton from "@/components/LoadingButton";
 import ResultCard from "@/components/ResultCard";
 import useSpeechRecognition from "@/hooks/useSpeechRecognition";
 import { toast } from "@/components/Toast";
-
-function formatTime(seconds: number) {
-  const m = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const s = (seconds % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
-}
+import { formatTime } from "@/lib/utils";
 
 export default function TranscricaoPage() {
   const [manualInput, setManualInput] = useState("");
@@ -20,17 +15,19 @@ export default function TranscricaoPage() {
   const [mode, setMode] = useState<"type" | "record">("type");
 
   const speech = useSpeechRecognition("pt-BR");
+  const speechRef = useRef(speech);
+  speechRef.current = speech;
 
+  // Listen for quick-record shortcut (⌘⇧R) — stable ref to avoid re-registering
   useEffect(() => {
-    if (typeof window !== "undefined" && window.alda?.onQuickRecord) {
-      window.alda.onQuickRecord(() => {
-        setMode("record");
-        if (!speech.isListening) {
-          speech.start();
-        }
-      });
-    }
-  }, [speech]);
+    if (typeof window === "undefined" || !window.alda?.onQuickRecord) return;
+    window.alda.onQuickRecord(() => {
+      setMode("record");
+      if (!speechRef.current.isListening) {
+        speechRef.current.start();
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentText =
     mode === "record"
@@ -137,6 +134,12 @@ export default function TranscricaoPage() {
                     <RotateCcw className="h-3.5 w-3.5" />
                     Limpar
                   </button>
+                )}
+                {speech.error && (
+                  <span className="inline-flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {speech.error === "not-allowed" ? "Permissão de microfone negada" : `Erro: ${speech.error}`}
+                  </span>
                 )}
               </div>
 

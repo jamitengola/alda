@@ -38,7 +38,8 @@ function createMainWindow() {
     movable: false,
     fullscreenable: false,
     alwaysOnTop: true,
-    skipTaskbar: false,
+    skipTaskbar: true,
+    type: "panel",
     backgroundColor: "#00000000",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -47,19 +48,9 @@ function createMainWindow() {
     },
   });
 
-  mainWindow.setAlwaysOnTop(true, "screen-saver", 1);
+  mainWindow.setAlwaysOnTop(true, "floating", 1);
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   mainWindow.setIgnoreMouseEvents(true, { forward: true });
-
-  // macOS: keep on all Spaces & above Mission Control
-  if (process.platform === "darwin") {
-    // collectionBehavior: canJoinAllSpaces | stationary | fullScreenAuxiliary
-    try {
-      app.dock.hide(); // remove from Dock so it behaves like a utility
-    } catch {
-      // dock may already be hidden
-    }
-  }
 
   mainWindow.loadURL(START_URL);
 
@@ -67,6 +58,13 @@ function createMainWindow() {
   if (stealthMode) {
     mainWindow.setContentProtection(true);
   }
+
+  // Re-apply visibility on all workspaces when window is shown
+  // (workaround for macOS Spaces losing the flag)
+  mainWindow.on("show", () => {
+    mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    mainWindow.setAlwaysOnTop(true, "floating", 1);
+  });
 
   // Hide instead of close on macOS
   mainWindow.on("close", (e) => {
@@ -108,6 +106,7 @@ function createOverlayWindow() {
   });
 
   overlayWindow.loadURL(`${START_URL}/overlay`);
+  overlayWindow.setAlwaysOnTop(true, "floating", 1);
   overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   // Apply stealth if already active
@@ -264,6 +263,13 @@ function registerShortcuts() {
     if (mainWindow) {
       mainWindow.show();
       mainWindow.webContents.send("toggle-spotlight");
+    }
+  });
+
+  // Toggle UI visibility (hide/show widgets & dock without closing window)
+  globalShortcut.register("CommandOrControl+Shift+H", () => {
+    if (mainWindow) {
+      mainWindow.webContents.send("toggle-ui-visibility");
     }
   });
 }

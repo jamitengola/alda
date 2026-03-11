@@ -25,21 +25,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const isDashboard = pathname === "/";
   const [stealth, setStealth] = useState(false);
   const [showSpotlight, setShowSpotlight] = useState(false);
+  const [uiVisible, setUiVisible] = useState(true);
+  const [isElectron, setIsElectron] = useState(false);
 
-  // Detect Electron & make background transparent (DOM only, no state)
+  // Detect Electron & make background transparent
   useEffect(() => {
     if (typeof window !== "undefined" && window.alda) {
+      setIsElectron(true);
       document.documentElement.style.background = "transparent";
       document.body.style.background = "transparent";
-      document.getElementById("alda-root")?.style.setProperty("background", "transparent");
     }
   }, []);
 
-  // Stealth & Spotlight IPC listeners
+  // Stealth & Spotlight & UI toggle IPC listeners
   useEffect(() => {
     if (typeof window === "undefined" || !window.alda) return;
     window.alda.onStealthMode((enabled) => setStealth(enabled));
     window.alda.onToggleSpotlight(() => setShowSpotlight((s) => !s));
+    window.alda.onToggleUI(() => setUiVisible((v) => !v));
   }, []);
 
   // Keyboard: Cmd+K for Spotlight (also works in browser)
@@ -48,6 +51,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setShowSpotlight((s) => !s);
+      }
+      // Cmd+Shift+H to toggle UI visibility (browser fallback)
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "h" || e.key === "H")) {
+        e.preventDefault();
+        setUiVisible((v) => !v);
       }
     };
     window.addEventListener("keydown", handler);
@@ -79,10 +87,37 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // Overlay page — no chrome
   if (isOverlay) return <>{children}</>;
 
+  // UI hidden — show only a minimal indicator pill
+  if (!uiVisible) {
+    return (
+      <div id="alda-root" className="fixed inset-0" style={{ background: "transparent" }}>
+        <div
+          data-interactive
+          className="fixed bottom-4 right-4 z-[999]"
+        >
+          <button
+            onClick={() => setUiVisible(true)}
+            className="dock-glass flex items-center gap-1.5 px-3 py-1.5 opacity-40 hover:opacity-100 transition-opacity"
+            title="Mostrar ALDA (⌘⇧H)"
+          >
+            <BrainCircuit className="h-3 w-3" />
+            <span className="text-[9px] font-medium">⌘⇧H</span>
+          </button>
+        </div>
+        <ToastContainer />
+      </div>
+    );
+  }
+
   return (
     <div
       id="alda-root"
-      className="fixed inset-0 text-gray-900 dark:text-gray-100 bg-gradient-to-br from-gray-100 via-gray-50 to-blue-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950/20"
+      className={`fixed inset-0 text-gray-900 dark:text-gray-100 ${
+        isElectron
+          ? ""
+          : "bg-gradient-to-br from-gray-100 via-gray-50 to-blue-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950/20"
+      }`}
+      style={isElectron ? { background: "transparent" } : undefined}
     >
       {isDashboard ? (
         /* Dashboard: widgets render directly on canvas */
