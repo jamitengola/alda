@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BarChart3, Clock, MessageSquare, Zap, TrendingUp } from "lucide-react";
-import PageHeader from "@/components/PageHeader";
+import { BarChart3, Clock, MessageSquare, Zap, TrendingUp, Activity } from "lucide-react";
 import Skeleton from "@/components/Skeleton";
 
 interface Session {
@@ -37,6 +36,12 @@ const MODE_LABELS: Record<string, string> = {
   question: "Perguntas",
 };
 
+const MODE_COLORS: Record<string, string> = {
+  coaching: "bg-blue-500",
+  objection: "bg-amber-500",
+  question: "bg-purple-500",
+};
+
 export default function PerformancePage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -54,143 +59,121 @@ export default function PerformancePage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-4xl">
-        <PageHeader title="Performance" description="Carregando..." />
+      <div className="p-8">
         <Skeleton lines={8} />
       </div>
     );
   }
 
   const statCards = [
-    {
-      label: "Sessões",
-      value: stats?.total_sessions ?? 0,
-      icon: BarChart3,
-      color: "text-blue-500",
-    },
-    {
-      label: "Tempo total",
-      value: formatDuration(stats?.total_duration ?? 0),
-      icon: Clock,
-      color: "text-green-500",
-    },
-    {
-      label: "Palavras",
-      value: stats?.total_words ?? 0,
-      icon: MessageSquare,
-      color: "text-purple-500",
-    },
-    {
-      label: "Sugestões usadas",
-      value: stats?.total_suggestions ?? 0,
-      icon: Zap,
-      color: "text-amber-500",
-    },
-    {
-      label: "Média (duração)",
-      value: formatDuration(Math.round(stats?.avg_duration ?? 0)),
-      icon: TrendingUp,
-      color: "text-cyan-500",
-    },
-    {
-      label: "Média (palavras)",
-      value: Math.round(stats?.avg_words ?? 0),
-      icon: MessageSquare,
-      color: "text-pink-500",
-    },
+    { label: "Sessões", value: stats?.total_sessions ?? 0, icon: BarChart3, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Tempo total", value: formatDuration(stats?.total_duration ?? 0), icon: Clock, color: "text-green-500", bg: "bg-green-500/10" },
+    { label: "Palavras", value: stats?.total_words ?? 0, icon: MessageSquare, color: "text-purple-500", bg: "bg-purple-500/10" },
+    { label: "Sugestões", value: stats?.total_suggestions ?? 0, icon: Zap, color: "text-amber-500", bg: "bg-amber-500/10" },
+    { label: "Média duração", value: formatDuration(Math.round(stats?.avg_duration ?? 0)), icon: TrendingUp, color: "text-cyan-500", bg: "bg-cyan-500/10" },
+    { label: "Média palavras", value: Math.round(stats?.avg_words ?? 0), icon: Activity, color: "text-pink-500", bg: "bg-pink-500/10" },
   ];
 
-  // Simple bar chart: word_count per session (last 10)
-  const chartSessions = [...sessions].reverse().slice(-10);
+  const chartSessions = [...sessions].reverse().slice(-15);
   const maxWords = Math.max(...chartSessions.map((s) => s.word_count), 1);
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <PageHeader
-        title="Performance"
-        description="Acompanhe seu desempenho nas sessões de coaching e veja sua evolução."
-      />
+    <div className="animate-[fade-in_0.4s_ease-out]">
+      {/* Header */}
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/10">
+          <BarChart3 className="h-5 w-5 text-pink-500" />
+        </div>
+        <div>
+          <h1 className="text-lg font-bold tracking-tight">Performance</h1>
+          <p className="text-xs opacity-40">Evolução e métricas das suas sessões</p>
+        </div>
+      </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-        {statCards.map(({ label, value, icon: Icon, color }) => (
-          <div
-            key={label}
-            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Icon className={`h-5 w-5 ${color}`} />
-              <span className="text-xs uppercase font-medium opacity-60">{label}</span>
+      {/* Stats — spread horizontally */}
+      <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        {statCards.map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className="rounded-xl border border-gray-200 dark:border-gray-800 p-3 flex items-center gap-3">
+            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${bg}`}>
+              <Icon className={`h-4.5 w-4.5 ${color}`} />
             </div>
-            <p className="text-2xl font-bold">{value}</p>
+            <div className="min-w-0">
+              <p className="text-lg font-bold leading-tight truncate">{value}</p>
+              <p className="text-[10px] uppercase font-medium opacity-40 truncate">{label}</p>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Simple bar chart */}
-      {chartSessions.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-3 text-sm font-semibold uppercase opacity-60">
-            Palavras por sessão (últ. 10)
+      {/* Two-column: chart + history */}
+      <div className="grid gap-5 lg:grid-cols-5">
+        {/* Chart — takes 3 cols */}
+        <section className="lg:col-span-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-5">
+          <h2 className="mb-4 text-xs font-semibold uppercase opacity-50">
+            Palavras por sessão (últ. 15)
           </h2>
-          <div className="flex items-end gap-2 h-32 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            {chartSessions.map((s) => {
-              const pct = Math.max((s.word_count / maxWords) * 100, 4);
-              return (
-                <div key={s.id} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-[10px] opacity-60">{s.word_count}</span>
-                  <div
-                    className="w-full rounded-t bg-blue-500 transition-all"
-                    style={{ height: `${pct}%` }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Session list */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase opacity-60">
-          Histórico de sessões
-        </h2>
-        {sessions.length === 0 ? (
-          <p className="text-gray-400 dark:text-gray-600 italic text-sm">
-            Nenhuma sessão registrada. Use o Coaching em Tempo Real e salve uma sessão.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {sessions.map((s) => (
-              <div
-                key={s.id}
-                className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-sm"
-              >
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      s.mode === "coaching"
-                        ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
-                        : s.mode === "objection"
-                        ? "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300"
-                        : "bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300"
-                    }`}
-                  >
-                    {MODE_LABELS[s.mode] ?? s.mode}
-                  </span>
-                  <span className="truncate max-w-[200px] opacity-80">{s.topic || "—"}</span>
-                </div>
-                <div className="flex items-center gap-4 opacity-60">
-                  <span>{formatDuration(s.duration)}</span>
-                  <span>{s.word_count} pal.</span>
-                  <span>{s.suggestions_used} sug.</span>
-                  <span>{new Date(s.created_at).toLocaleDateString("pt-BR")}</span>
-                </div>
-              </div>
+          {chartSessions.length > 0 ? (
+            <div className="flex items-end gap-1.5 h-44">
+              {chartSessions.map((s) => {
+                const pct = Math.max((s.word_count / maxWords) * 100, 3);
+                return (
+                  <div key={s.id} className="flex-1 flex flex-col items-center gap-1 group">
+                    <span className="text-[9px] opacity-0 group-hover:opacity-60 transition-opacity">{s.word_count}</span>
+                    <div
+                      className={`w-full rounded-t transition-all group-hover:opacity-100 opacity-70 ${MODE_COLORS[s.mode] ?? "bg-blue-500"}`}
+                      style={{ height: `${pct}%` }}
+                      title={`${MODE_LABELS[s.mode] ?? s.mode} · ${s.word_count} palavras`}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm italic opacity-40 text-center py-12">Sem dados ainda</p>
+          )}
+          {/* Legend */}
+          <div className="mt-3 flex items-center gap-4 text-[10px] opacity-40">
+            {Object.entries(MODE_LABELS).map(([key, label]) => (
+              <span key={key} className="flex items-center gap-1">
+                <span className={`h-2 w-2 rounded-full ${MODE_COLORS[key]}`} />
+                {label}
+              </span>
             ))}
           </div>
-        )}
-      </section>
+        </section>
+
+        {/* History — takes 2 cols */}
+        <section className="lg:col-span-2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-5 max-h-[400px] overflow-y-auto styled-scroll">
+          <h2 className="mb-4 text-xs font-semibold uppercase opacity-50">
+            Histórico
+          </h2>
+          {sessions.length === 0 ? (
+            <p className="text-sm italic opacity-40 text-center py-8">
+              Salve uma sessão no Coaching para ver aqui.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {sessions.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex items-center gap-3 rounded-lg p-2.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                >
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${MODE_COLORS[s.mode] ?? "bg-gray-400"}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{s.topic || "Sessão sem título"}</p>
+                    <p className="text-[11px] opacity-40">
+                      {formatDuration(s.duration)} · {s.word_count} pal · {s.suggestions_used} sug
+                    </p>
+                  </div>
+                  <span className="text-[10px] opacity-30 shrink-0">
+                    {new Date(s.created_at).toLocaleDateString("pt-BR")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

@@ -1,8 +1,7 @@
 "use client";
 
 import { FormEvent, useState, useEffect, useCallback } from "react";
-import { Copy, Mail, Download, Clock } from "lucide-react";
-import PageHeader from "@/components/PageHeader";
+import { Copy, Mail, Download, Clock, MessageSquareReply, Send } from "lucide-react";
 import LoadingButton from "@/components/LoadingButton";
 import ResultCard from "@/components/ResultCard";
 import { toast } from "@/components/Toast";
@@ -77,103 +76,110 @@ export default function FollowupPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <PageHeader
-        title="Follow-up Automático"
-        description="Gere um email ou checklist profissional após uma reunião ou formação."
-      />
-
-      <form onSubmit={onSubmit} className="space-y-4">
-        <textarea
-          className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-100 p-4 focus:border-blue-400 focus:outline-none"
-          rows={6}
-          placeholder="Resumo da reunião ou formação para gerar follow-up..."
-          value={context}
-          onChange={(e) => setContext(e.target.value)}
-        />
-        <LoadingButton loading={loading} label="Gerar follow-up" loadingLabel="Gerando..." />
-      </form>
-
-      {followup && (
-        <div className="mt-6 space-y-3">
-          <ResultCard title="Follow-up gerado">{followup}</ResultCard>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={onCopy}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              <Copy className="h-3.5 w-3.5" />
-              {copied ? "Copiado!" : "Copiar"}
-            </button>
-            <button
-              onClick={() => onDownload(followup)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Download .md
-            </button>
-            <button
-              onClick={onEmail}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              <Mail className="h-3.5 w-3.5" />
-              Abrir no email
-            </button>
+    <div className="flex flex-col h-full gap-5 animate-[fade-in_0.4s_ease-out]">
+      {/* ─── Top: Input + Result side by side ─── */}
+      <div className="flex flex-1 gap-5 min-h-0">
+        {/* Left: Form */}
+        <div className="w-96 shrink-0 flex flex-col">
+          <div className="mb-4">
+            <h1 className="text-lg font-bold tracking-tight flex items-center gap-2">
+              <MessageSquareReply className="h-5 w-5 text-green-500" />
+              Follow-up
+            </h1>
+            <p className="text-xs opacity-50 mt-1">Email ou checklist pós-reunião</p>
           </div>
-        </div>
-      )}
 
-      {/* History */}
-      {history.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase opacity-60">
-            <Clock className="h-4 w-4" />
-            Histórico ({history.length})
-          </h2>
-          <ul className="space-y-3">
-            {history.map((item) => (
-              <li
-                key={item.id}
-                className="rounded-lg border border-gray-200 dark:border-gray-700 p-4"
+          <form onSubmit={onSubmit} className="flex flex-1 flex-col gap-3">
+            <textarea
+              className="flex-1 min-h-[120px] rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 dark:text-gray-100 p-4 text-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 focus:outline-none resize-none transition-colors"
+              placeholder="Resumo da reunião ou formação para gerar follow-up..."
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+            />
+            <LoadingButton loading={loading} label="Gerar follow-up" loadingLabel="Gerando..." />
+          </form>
+        </div>
+
+        {/* Right: Result */}
+        <section className="flex-1 flex flex-col min-w-0">
+          <div className="mb-4 flex items-center gap-2">
+            <Send className="h-4 w-4 text-green-500" />
+            <h2 className="text-sm font-semibold uppercase opacity-60">Resultado</h2>
+          </div>
+
+          <div className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-5 overflow-y-auto styled-scroll">
+            {followup ? (
+              <ResultCard>{followup}</ResultCard>
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-center text-gray-400 dark:text-gray-600 italic text-sm max-w-[200px]">
+                  O follow-up gerado aparecerá aqui.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Action buttons */}
+          {followup && (
+            <div className="mt-3 flex gap-2">
+              <button onClick={onCopy}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs opacity-50 mb-1">
-                      {new Date(item.created_at).toLocaleDateString("pt-BR", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                      {" · "}
-                      <span className="text-blue-500">{item.provider}</span>
-                    </p>
-                    <p className="text-sm line-clamp-2 opacity-80">{item.context}</p>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button
-                      onClick={() => {
-                        setFollowup(item.followup);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs"
-                      title="Ver follow-up"
-                    >
-                      Ver
-                    </button>
-                    <button
-                      onClick={() => onDownload(item.followup, `followup-${item.id}.md`)}
-                      className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                      title="Download"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                <Copy className="h-3 w-3" />
+                {copied ? "Copiado!" : "Copiar"}
+              </button>
+              <button onClick={() => onDownload(followup)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <Download className="h-3 w-3" />
+                .md
+              </button>
+              <button onClick={onEmail}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <Mail className="h-3 w-3" />
+                Email
+              </button>
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* ─── Bottom: History bar ─── */}
+      {history.length > 0 && (
+        <section className="shrink-0">
+          <div className="mb-2 flex items-center gap-2">
+            <Clock className="h-3.5 w-3.5 opacity-40" />
+            <h2 className="text-xs font-semibold uppercase opacity-40">Histórico ({history.length})</h2>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1 styled-scroll">
+            {history.map((item) => (
+              <div
+                key={item.id}
+                className="shrink-0 w-64 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-3 hover:border-blue-400/50 transition-colors cursor-pointer group"
+                onClick={() => {
+                  setFollowup(item.followup);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
+                <p className="text-[10px] opacity-40 mb-1">
+                  {new Date(item.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  {" · "}
+                  <span className="text-blue-500">{item.provider}</span>
+                </p>
+                <p className="text-xs line-clamp-2 opacity-70 group-hover:opacity-100 transition-opacity">{item.context}</p>
+                <div className="mt-2 flex gap-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDownload(item.followup, `followup-${item.id}.md`); }}
+                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+                    title="Download"
+                  >
+                    <Download className="h-3 w-3 opacity-40" />
+                  </button>
                 </div>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
       )}
     </div>

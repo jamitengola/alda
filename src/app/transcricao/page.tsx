@@ -1,8 +1,7 @@
 "use client";
 
 import { FormEvent, useState, useEffect } from "react";
-import { Mic, MicOff, RotateCcw } from "lucide-react";
-import PageHeader from "@/components/PageHeader";
+import { Mic, MicOff, RotateCcw, FileText, Keyboard, Radio } from "lucide-react";
 import LoadingButton from "@/components/LoadingButton";
 import ResultCard from "@/components/ResultCard";
 import useSpeechRecognition from "@/hooks/useSpeechRecognition";
@@ -22,7 +21,6 @@ export default function TranscricaoPage() {
 
   const speech = useSpeechRecognition("pt-BR");
 
-  // Listen for quick-record shortcut from Electron (Cmd+Shift+R)
   useEffect(() => {
     if (typeof window !== "undefined" && window.alda?.onQuickRecord) {
       window.alda.onQuickRecord(() => {
@@ -59,113 +57,123 @@ export default function TranscricaoPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <PageHeader
-        title="Transcrição + Resumo"
-        description="Grave áudio ao vivo ou cole texto para gerar um resumo automático."
-      />
+    <div className="flex h-full gap-6 animate-[fade-in_0.4s_ease-out]">
+      {/* ─── Left: Input area ─── */}
+      <div className="flex flex-1 flex-col min-w-0">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-bold tracking-tight">Transcrição</h1>
+            {speech.isListening && (
+              <span className="flex items-center gap-1.5 text-xs font-medium text-red-500">
+                <Radio className="h-3.5 w-3.5 animate-pulse" />
+                {formatTime(speech.elapsed)}
+              </span>
+            )}
+          </div>
 
-      {/* Mode toggle */}
-      <div className="mb-4 flex gap-2">
-        <button
-          type="button"
-          onClick={() => setMode("type")}
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-            mode === "type" ? "bg-blue-600 text-white" : "border hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          }`}
-        >
-          Digitar texto
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("record")}
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-            mode === "record" ? "bg-blue-600 text-white" : "border hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          }`}
-        >
-          Gravar áudio
-        </button>
+          {/* Mode toggle */}
+          <div className="flex rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setMode("type")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                mode === "type" ? "bg-blue-600 text-white" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+              }`}
+            >
+              <Keyboard className="h-3.5 w-3.5" />
+              Digitar
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("record")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                mode === "record" ? "bg-blue-600 text-white" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+              }`}
+            >
+              <Mic className="h-3.5 w-3.5" />
+              Gravar
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={onSubmit} className="flex flex-1 flex-col gap-3">
+          {mode === "type" ? (
+            <textarea
+              className="flex-1 min-h-[200px] rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 dark:text-gray-100 p-4 text-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 focus:outline-none resize-none transition-colors"
+              placeholder="Cole a transcrição da reunião ou aula aqui..."
+              value={manualInput}
+              onChange={(e) => setManualInput(e.target.value)}
+            />
+          ) : (
+            <div className="flex flex-1 flex-col gap-3">
+              {/* Controls */}
+              <div className="flex items-center gap-3">
+                {!speech.isListening ? (
+                  <button
+                    type="button"
+                    onClick={speech.start}
+                    disabled={!speech.isSupported}
+                    className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    <Mic className="h-4 w-4" />
+                    {speech.isSupported ? "Iniciar gravação" : "Não suportado"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={speech.stop}
+                    className="inline-flex items-center gap-2 rounded-xl bg-zinc-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 transition-colors"
+                  >
+                    <MicOff className="h-4 w-4" />
+                    Parar
+                  </button>
+                )}
+                {speech.transcript && !speech.isListening && (
+                  <button
+                    type="button"
+                    onClick={speech.reset}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Limpar
+                  </button>
+                )}
+              </div>
+
+              {/* Live transcript */}
+              <div className="flex-1 min-h-[180px] rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-4 text-sm overflow-y-auto styled-scroll">
+                {currentText || (
+                  <span className="italic opacity-40">
+                    {speech.isListening ? "A ouvir... fale agora." : "Clique em \"Iniciar gravação\"."}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          <LoadingButton loading={loading} label="Gerar resumo" loadingLabel="IA resumindo..." disabled={!currentText.trim()} />
+        </form>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-4">
-        {mode === "type" ? (
-          <textarea
-            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-100 p-4 focus:border-blue-400 focus:outline-none"
-            rows={8}
-            placeholder="Cole a transcrição da reunião ou aula aqui..."
-            value={manualInput}
-            onChange={(e) => setManualInput(e.target.value)}
-          />
-        ) : (
-          <div className="space-y-3">
-            {/* Recording controls */}
-            <div className="flex items-center gap-3">
-              {!speech.isListening ? (
-                <button
-                  type="button"
-                  onClick={speech.start}
-                  disabled={!speech.isSupported}
-                  className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-                >
-                  <Mic className="h-4 w-4" />
-                  {speech.isSupported ? "Iniciar gravação" : "Não suportado neste browser"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={speech.stop}
-                  className="inline-flex items-center gap-2 rounded-lg bg-zinc-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
-                >
-                  <MicOff className="h-4 w-4" />
-                  Parar
-                </button>
-              )}
-
-              {speech.isListening && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
-                  <span className="font-mono">{formatTime(speech.elapsed)}</span>
-                </div>
-              )}
-
-              {speech.transcript && !speech.isListening && (
-                <button
-                  type="button"
-                  onClick={speech.reset}
-                  className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Limpar
-                </button>
-              )}
-            </div>
-
-            {/* Live transcript */}
-            <div className="min-h-[180px] rounded-lg border bg-zinc-50 p-4 text-sm dark:bg-zinc-900">
-              {currentText || (
-                <span className="italic opacity-40">
-                  {speech.isListening
-                    ? "A ouvir... fale agora."
-                    : "Clique em \"Iniciar gravação\" para começar."}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        <LoadingButton
-          loading={loading}
-          label="Gerar resumo"
-          loadingLabel="IA resumindo..."
-          disabled={!currentText.trim()}
-        />
-      </form>
-
-      {summary && (
-        <div className="mt-6">
-          <ResultCard title="Resumo gerado">{summary}</ResultCard>
+      {/* ─── Right: Result ─── */}
+      <section className="flex w-80 shrink-0 flex-col lg:w-[420px]">
+        <div className="mb-4 flex items-center gap-2">
+          <FileText className="h-4 w-4 text-rose-500" />
+          <h2 className="text-sm font-semibold uppercase opacity-60">Resumo</h2>
         </div>
-      )}
+
+        <div className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-5 overflow-y-auto styled-scroll">
+          {summary ? (
+            <ResultCard>{summary}</ResultCard>
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-center text-gray-400 dark:text-gray-600 italic text-sm max-w-[200px]">
+                O resumo gerado pela IA aparecerá aqui com pontos-chave e ações.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
