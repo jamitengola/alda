@@ -14,6 +14,7 @@ interface AldaBridge {
   onStealthMode: (callback: (enabled: boolean) => void) => void;
   onActiveAppChanged: (callback: (appInfo: { name: string; bundleId: string }) => void) => void;
   onToggleUI: (callback: () => void) => void;
+  onClipboardTextCopied: (callback: (text: string) => void) => void;
 }
 
 interface Window {

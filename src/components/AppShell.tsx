@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -15,6 +15,7 @@ import { useElectronNav } from "@/hooks/useElectronNav";
 import ProviderBadge from "@/components/ProviderBadge";
 import ThemeToggle from "@/components/ThemeToggle";
 import Spotlight from "@/components/Spotlight";
+import ClipboardActions from "@/components/ClipboardActions";
 import ToastContainer from "@/components/Toast";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -27,6 +28,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [showSpotlight, setShowSpotlight] = useState(false);
   const [uiVisible, setUiVisible] = useState(true);
   const [isElectron, setIsElectron] = useState(false);
+  const [clipboardText, setClipboardText] = useState<string | null>(null);
+  const clipboardTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Detect Electron & make background transparent
   useEffect(() => {
@@ -43,7 +46,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     window.alda.onStealthMode((enabled) => setStealth(enabled));
     window.alda.onToggleSpotlight(() => setShowSpotlight((s) => !s));
     window.alda.onToggleUI(() => setUiVisible((v) => !v));
-  }, []);
+    window.alda.onClipboardTextCopied((text) => {
+      setClipboardText(text);
+      // Auto-dismiss after 15s
+      if (clipboardTimer.current) clearTimeout(clipboardTimer.current);
+      clipboardTimer.current = setTimeout(() => setClipboardText(null), 15000);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keyboard: Cmd+K for Spotlight (also works in browser)
   useEffect(() => {
@@ -204,6 +213,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Spotlight ── */}
       {showSpotlight && <Spotlight onClose={() => setShowSpotlight(false)} />}
+
+      {/* ── Clipboard Actions popup ── */}
+      {clipboardText && (
+        <ClipboardActions text={clipboardText} onClose={() => setClipboardText(null)} />
+      )}
 
       <ToastContainer />
     </div>

@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { BookOpen, Target, Clock } from "lucide-react";
+import { FormEvent, useState, useEffect, useRef, useCallback } from "react";
+import { BookOpen, Target, Clock, Play, Pause, RotateCcw, Coffee } from "lucide-react";
 import LoadingButton from "@/components/LoadingButton";
 import { toast } from "@/components/Toast";
+import { formatTime } from "@/lib/utils";
 
 type StudyTask = {
   title: string;
@@ -28,6 +29,51 @@ export default function EstudosPage() {
   const [duration, setDuration] = useState("");
   const [tasks, setTasks] = useState<StudyTask[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // ── Pomodoro Timer ──
+  const WORK_SECS = 25 * 60;
+  const BREAK_SECS = 5 * 60;
+  const [pomodoroLeft, setPomodoroLeft] = useState(WORK_SECS);
+  const [pomodoroRunning, setPomodoroRunning] = useState(false);
+  const [isBreak, setIsBreak] = useState(false);
+  const [pomodoroCount, setPomodoroCount] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopInterval = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!pomodoroRunning) { stopInterval(); return; }
+    intervalRef.current = setInterval(() => {
+      setPomodoroLeft((prev) => {
+        if (prev <= 1) {
+          setPomodoroRunning(false);
+          if (!isBreak) {
+            setPomodoroCount((c) => c + 1);
+            setIsBreak(true);
+            toast("Pomodoro concluído! Hora do intervalo ☕");
+            return BREAK_SECS;
+          } else {
+            setIsBreak(false);
+            toast("Intervalo acabou! Bora estudar 💪");
+            return WORK_SECS;
+          }
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return stopInterval;
+  }, [pomodoroRunning, isBreak, stopInterval, WORK_SECS, BREAK_SECS]);
+
+  function resetPomodoro() {
+    setPomodoroRunning(false);
+    setIsBreak(false);
+    setPomodoroLeft(WORK_SECS);
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -98,6 +144,44 @@ export default function EstudosPage() {
             </div>
           </div>
         )}
+
+        {/* ── Pomodoro Timer Widget ── */}
+        <div className="mt-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            {isBreak ? <Coffee className="h-4 w-4 text-green-500" /> : <Clock className="h-4 w-4 text-red-500" />}
+            <p className="text-xs uppercase font-medium opacity-60">
+              {isBreak ? "Intervalo" : "Pomodoro"}
+            </p>
+            {pomodoroCount > 0 && (
+              <span className="ml-auto text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                🍅 {pomodoroCount}
+              </span>
+            )}
+          </div>
+
+          <p className={`text-center text-4xl font-mono font-bold tabular-nums ${isBreak ? "text-green-500" : pomodoroLeft <= 60 ? "text-red-500 animate-pulse" : ""}`}>
+            {formatTime(pomodoroLeft)}
+          </p>
+
+          <div className="mt-3 flex items-center justify-center gap-2">
+            <button
+              onClick={() => setPomodoroRunning(!pomodoroRunning)}
+              className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium text-white transition-colors ${
+                pomodoroRunning ? "bg-amber-500 hover:bg-amber-600" : "bg-blue-600 hover:bg-blue-700"
+              }`}
+            >
+              {pomodoroRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              {pomodoroRunning ? "Pausar" : "Iniciar"}
+            </button>
+            <button
+              onClick={resetPomodoro}
+              className="flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-1.5 text-xs opacity-60 hover:opacity-100 transition-opacity"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ─── Right: Task list (expands) ─── */}

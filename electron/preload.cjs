@@ -55,4 +55,9 @@ contextBridge.exposeInMainWorld("alda", {
   onToggleUI: (callback) => {
     ipcRenderer.on("toggle-ui-visibility", () => callback());
   },
+
+  // Clipboard Watcher
+  onClipboardTextCopied: (callback) => {
+    ipcRenderer.on("clipboard-text-copied", (_event, text) => callback(text));
+  },
 });

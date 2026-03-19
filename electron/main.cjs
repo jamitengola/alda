@@ -7,6 +7,7 @@ const {
   globalShortcut,
   ipcMain,
   nativeImage,
+  clipboard,
 } = require("electron");
 const path = require("node:path");
 const { execFile } = require("node:child_process");
@@ -17,6 +18,8 @@ let overlayWindow = null;
 let tray = null;
 let stealthMode = false;
 let activeAppInterval = null;
+let clipboardWatcherInterval = null;
+let lastClipboardText = "";
 const START_URL = process.env.ELECTRON_START_URL || "http://localhost:3000";
 
 // ─── Main Window ─────────────────────────────────────────
@@ -339,6 +342,20 @@ end tell
   }, 1500); // poll every 1.5s
 }
 
+// ─── Clipboard Watcher ───────────────────────────────────
+function startClipboardWatcher() {
+  lastClipboardText = clipboard.readText();
+  clipboardWatcherInterval = setInterval(() => {
+    if (!mainWindow) return;
+    const text = clipboard.readText();
+    // Se o texto mudou e tem tamanho considerável (evita spam de coisas pequenas)
+    if (text !== lastClipboardText && text.trim().length > 15) {
+      lastClipboardText = text;
+      mainWindow.webContents.send("clipboard-text-copied", text.trim());
+    }
+  }, 1500); // testa clipboard a cada 1.5s
+}
+
 // ─── App Lifecycle ───────────────────────────────────────
 app.whenReady().then(() => {
   createMainWindow();
@@ -346,6 +363,7 @@ app.whenReady().then(() => {
   registerShortcuts();
   setupIPC();
   startActiveAppPolling();
+  startClipboardWatcher();
 
   app.on("activate", () => {
     if (!mainWindow) {
@@ -365,6 +383,7 @@ app.on("window-all-closed", () => {
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   if (activeAppInterval) clearInterval(activeAppInterval);
+  if (clipboardWatcherInterval) clearInterval(clipboardWatcherInterval);
 });
 
 app.on("before-quit", () => {
