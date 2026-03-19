@@ -60,4 +60,12 @@ contextBridge.exposeInMainWorld("alda", {
   onClipboardTextCopied: (callback) => {
     ipcRenderer.on("clipboard-text-copied", (_event, text) => callback(text));
   },
+
+  // Screenshot + OCR
+  onScreenshotOCR: (callback) => {
+    ipcRenderer.on("screenshot-ocr-result", (_event, text) => callback(text));
+  },
+  onScreenshotOCRStatus: (callback) => {
+    ipcRenderer.on("screenshot-ocr-status", (_event, status) => callback(status));
+  },
 });

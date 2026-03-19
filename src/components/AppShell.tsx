@@ -14,6 +14,9 @@ import {
   MicOff,
   Send,
   X,
+  Camera,
+  Copy,
+  Loader2,
 } from "lucide-react";
 import { useElectronNav } from "@/hooks/useElectronNav";
 import useSpeechRecognition from "@/hooks/useSpeechRecognition";
@@ -59,6 +62,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   } | null>(null);
   const lastNotifiedBundle = useRef<string>("");
   const notifCooldowns = useRef<Record<string, number>>({});
+
+  // ── Screenshot OCR ──
+  const [ocrText, setOcrText] = useState<string | null>(null);
+  const [ocrStatus, setOcrStatus] = useState<"idle" | "capturing" | "processing">("idle");
 
   // ── Global dictation ──
   const [showDictation, setShowDictation] = useState(false);
@@ -132,6 +139,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       setProactiveNotif(rule);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Screenshot OCR IPC listeners ──
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.alda) return;
+    window.alda.onScreenshotOCR((text) => {
+      setOcrText(text);
+      setOcrStatus("idle");
+    });
+    window.alda.onScreenshotOCRStatus((status) => setOcrStatus(status));
+  }, []);
 
   // Keyboard: Cmd+K for Spotlight (also works in browser)
   useEffect(() => {
@@ -291,6 +308,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </button>
 
+          <div
+            className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
+              ocrStatus !== "idle"
+                ? "bg-cyan-500/20 text-cyan-400 animate-pulse"
+                : "opacity-40"
+            }`}
+            title="Screenshot OCR (⌘⇧P)"
+          >
+            {ocrStatus === "processing" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Camera className="h-3.5 w-3.5" />
+            )}
+          </div>
+
           {stealth && (
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-500/15 text-green-500">
               <ShieldCheck className="h-4 w-4" />
@@ -385,6 +417,52 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           actionLabel={proactiveNotif.actionLabel}
           onDismiss={() => setProactiveNotif(null)}
         />
+      )}
+
+      {/* ── Screenshot OCR Result Panel ── */}
+      {ocrText && (
+        <div
+          data-interactive
+          className="fixed top-6 left-1/2 z-[999] -translate-x-1/2 w-[480px] max-w-[90vw]"
+        >
+          <div className="dock-glass p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Camera className="h-4 w-4 text-cyan-400" />
+                <span className="text-xs font-semibold">Texto extraído (OCR)</span>
+              </div>
+              <button onClick={() => setOcrText(null)} className="opacity-40 hover:opacity-100 transition-opacity">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="rounded-lg bg-black/20 p-3 max-h-[200px] overflow-y-auto styled-scroll mb-3">
+              <p className="text-sm whitespace-pre-wrap">{ocrText}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(ocrText);
+                  toast("Texto copiado!");
+                }}
+                className="flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-white/20 px-3 py-1.5 text-xs font-medium transition-colors"
+              >
+                <Copy className="h-3 w-3" />
+                Copiar
+              </button>
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("alda-dictation", { detail: ocrText }));
+                  toast("Texto inserido no campo ativo!");
+                  setOcrText(null);
+                }}
+                className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white transition-colors"
+              >
+                <Send className="h-3 w-3" />
+                Inserir no campo
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <ToastContainer />

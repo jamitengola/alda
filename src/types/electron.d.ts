@@ -15,6 +15,8 @@ interface AldaBridge {
   onActiveAppChanged: (callback: (appInfo: { name: string; bundleId: string }) => void) => void;
   onToggleUI: (callback: () => void) => void;
   onClipboardTextCopied: (callback: (text: string) => void) => void;
+  onScreenshotOCR: (callback: (text: string) => void) => void;
+  onScreenshotOCRStatus: (callback: (status: "idle" | "capturing" | "processing") => void) => void;
 }
 
 interface Window {

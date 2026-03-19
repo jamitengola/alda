@@ -10,6 +10,8 @@ const {
   clipboard,
 } = require("electron");
 const path = require("node:path");
+const fs = require("node:fs");
+const os = require("node:os");
 const { execFile } = require("node:child_process");
 
 // ─── State ───────────────────────────────────────────────
@@ -275,6 +277,11 @@ function registerShortcuts() {
       mainWindow.webContents.send("toggle-ui-visibility");
     }
   });
+
+  // Screenshot + OCR (⌘⇧P)
+  globalShortcut.register("CommandOrControl+Shift+P", () => {
+    captureAndOCR();
+  });
 }
 
 // ─── IPC Handlers ────────────────────────────────────────
@@ -310,6 +317,51 @@ function setupIPC() {
         win.setIgnoreMouseEvents(false);
       }
     }
+  });
+}
+
+// ─── Screenshot + OCR ────────────────────────────────────
+function captureAndOCR() {
+  if (!mainWindow) return;
+  const tmpFile = path.join(os.tmpdir(), `alda-screenshot-${Date.now()}.png`);
+
+  // Notify renderer that capture is starting
+  mainWindow.webContents.send("screenshot-ocr-status", "capturing");
+
+  // Use macOS native screencapture (interactive selection)
+  execFile("screencapture", ["-i", tmpFile], { timeout: 30000 }, (err) => {
+    if (err || !fs.existsSync(tmpFile)) {
+      // User cancelled or error
+      mainWindow.webContents.send("screenshot-ocr-status", "idle");
+      return;
+    }
+
+    mainWindow.webContents.send("screenshot-ocr-status", "processing");
+
+    // Dynamic import for Tesseract.js (ESM module)
+    import("tesseract.js").then(({ createWorker }) => {
+      createWorker("por+eng").then((worker) => {
+        worker.recognize(tmpFile).then(({ data: { text } }) => {
+          const clean = text.trim();
+          if (clean) {
+            mainWindow.webContents.send("screenshot-ocr-result", clean);
+          }
+          mainWindow.webContents.send("screenshot-ocr-status", "idle");
+          worker.terminate();
+          // Clean up temp file
+          fs.unlink(tmpFile, () => {});
+        }).catch(() => {
+          mainWindow.webContents.send("screenshot-ocr-status", "idle");
+          fs.unlink(tmpFile, () => {});
+        });
+      }).catch(() => {
+        mainWindow.webContents.send("screenshot-ocr-status", "idle");
+        fs.unlink(tmpFile, () => {});
+      });
+    }).catch(() => {
+      mainWindow.webContents.send("screenshot-ocr-status", "idle");
+      fs.unlink(tmpFile, () => {});
+    });
   });
 }
 
