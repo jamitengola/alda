@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Download,
   Upload,
+  Laptop,
 } from "lucide-react";
 
 const WIDGETS = [
@@ -74,6 +75,13 @@ const WIDGETS = [
     title: "Histórico",
     accent: "bg-indigo-500",
     glow: "shadow-indigo-500/20",
+  },
+  {
+    href: "/integracoes",
+    icon: Laptop,
+    title: "Integrações",
+    accent: "bg-teal-500",
+    glow: "shadow-teal-500/20",
   },
 ];
 

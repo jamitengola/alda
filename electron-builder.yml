@@ -1,0 +1,70 @@
+appId: com.alda.desktop
+productName: ALDA
+copyright: Copyright © 2025 ALDA
+
+directories:
+  output: dist
+  buildResources: build
+
+# Skip native module rebuild — better-sqlite3 runs in the Next.js server process,
+# not in Electron's renderer. The standalone output already has the correct binary.
+npmRebuild: false
+
+# Include the standalone Next.js server + Electron files
+files:
+  - ".next/standalone/**/*"
+  - ".next/static/**/*"
+  - "public/**/*"
+  - "data/**/*"
+  - "electron/**/*"
+  - "package.json"
+  - "!node_modules"
+  - "!src"
+  - "!scripts"
+
+# Extra resources to bundle alongside the app (accessible via process.resourcesPath)
+extraResources:
+  - from: ".next/standalone"
+    to: "standalone"
+    filter:
+      - "**/*"
+  - from: ".next/static"
+    to: "standalone/.next/static"
+    filter:
+      - "**/*"
+  - from: "data"
+    to: "data"
+    filter:
+      - "**/*"
+  - from: "public"
+    to: "standalone/public"
+    filter:
+      - "**/*"
+
+mac:
+  category: public.app-category.productivity
+  icon: build/icon.icns
+  identity: null
+  target:
+    - target: dmg
+      arch:
+        - arm64
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  entitlements: null
+  entitlementsInherit: null
+
+dmg:
+  title: ALDA
+  icon: build/icon.icns
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+# The main entry point for Electron
+extraMetadata:
+  main: electron/app-entry.cjs

@@ -10,6 +10,7 @@ import {
   FileText,
   History,
   LayoutDashboard,
+  Laptop,
   MessageSquareReply,
   Mic,
   Search,
@@ -37,6 +38,7 @@ const MODULES: SpotlightItem[] = [
   { href: "/conhecimento", icon: FileText, title: "Base de Conhecimento", desc: "Busca semântica RAG", type: "route" },
   { href: "/performance", icon: BarChart3, title: "Performance", desc: "Métricas das sessões", type: "route" },
   { href: "/historico", icon: History, title: "Histórico", desc: "Timeline de sessões com busca", type: "route" },
+  { href: "/integracoes", icon: Laptop, title: "Integrações macOS", desc: "Calendário, Lembretes, Email e Notas", type: "route" },
 ];
 
 interface SpotlightProps {

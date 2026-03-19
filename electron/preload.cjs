@@ -68,4 +68,15 @@ contextBridge.exposeInMainWorld("alda", {
   onScreenshotOCRStatus: (callback) => {
     ipcRenderer.on("screenshot-ocr-status", (_event, status) => callback(status));
   },
+
+  // macOS Native Integrations
+  macGetCalendarEvents: (days) => ipcRenderer.invoke("macos:getCalendarEvents", days),
+  macCreateCalendarEvent: (data) => ipcRenderer.invoke("macos:createCalendarEvent", data),
+  macListCalendars: () => ipcRenderer.invoke("macos:listCalendars"),
+  macGetReminders: (listName) => ipcRenderer.invoke("macos:getReminders", listName),
+  macCreateReminder: (data) => ipcRenderer.invoke("macos:createReminder", data),
+  macListReminderLists: () => ipcRenderer.invoke("macos:listReminderLists"),
+  macComposeMail: (data) => ipcRenderer.invoke("macos:composeMail", data),
+  macGetUnreadEmails: (limit) => ipcRenderer.invoke("macos:getUnreadEmails", limit),
+  macCreateNote: (data) => ipcRenderer.invoke("macos:createNote", data),
 });

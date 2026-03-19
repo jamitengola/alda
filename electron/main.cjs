@@ -13,6 +13,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
 const { execFile } = require("node:child_process");
+const macNative = require("./macos-native.cjs");
 
 // ─── State ───────────────────────────────────────────────
 let mainWindow = null;
@@ -318,6 +319,35 @@ function setupIPC() {
       }
     }
   });
+
+  // ─── macOS Native Integration IPC ────────────────────
+  ipcMain.handle("macos:getCalendarEvents", async (_e, days) => {
+    return macNative.getCalendarEvents(days);
+  });
+  ipcMain.handle("macos:createCalendarEvent", async (_e, data) => {
+    return macNative.createCalendarEvent(data);
+  });
+  ipcMain.handle("macos:listCalendars", async () => {
+    return macNative.listCalendars();
+  });
+  ipcMain.handle("macos:getReminders", async (_e, listName) => {
+    return macNative.getReminders(listName);
+  });
+  ipcMain.handle("macos:createReminder", async (_e, data) => {
+    return macNative.createReminder(data);
+  });
+  ipcMain.handle("macos:listReminderLists", async () => {
+    return macNative.listReminderLists();
+  });
+  ipcMain.handle("macos:composeMail", async (_e, data) => {
+    return macNative.composeMail(data);
+  });
+  ipcMain.handle("macos:getUnreadEmails", async (_e, limit) => {
+    return macNative.getUnreadEmails(limit);
+  });
+  ipcMain.handle("macos:createNote", async (_e, data) => {
+    return macNative.createNote(data);
+  });
 }
 
 // ─── Screenshot + OCR ────────────────────────────────────
@@ -409,7 +439,15 @@ function startClipboardWatcher() {
 }
 
 // ─── App Lifecycle ───────────────────────────────────────
-app.whenReady().then(() => {
+
+// Auto-launch: register ALDA to start at macOS login
+app.setLoginItemSettings({
+  openAtLogin: true,
+  openAsHidden: true,
+  name: "ALDA",
+});
+
+function bootstrap() {
   createMainWindow();
   createTray();
   registerShortcuts();
@@ -424,7 +462,14 @@ app.whenReady().then(() => {
       mainWindow.show();
     }
   });
-});
+}
+
+// When required by app-entry.cjs, the app is already ready
+if (app.isReady()) {
+  bootstrap();
+} else {
+  app.whenReady().then(bootstrap);
+}
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
