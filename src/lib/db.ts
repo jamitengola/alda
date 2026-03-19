@@ -253,6 +253,51 @@ export function getCoachingStats() {
   return row;
 }
 
+// ─── Dashboard Analytics ─────────────────────────────────
+
+export function getDashboardStats() {
+  const db = getDb();
+
+  const counts = db
+    .prepare(
+      `SELECT
+        (SELECT COUNT(*) FROM summaries) as transcriptions,
+        (SELECT COUNT(*) FROM coaching_sessions) as coaching,
+        (SELECT COUNT(*) FROM followups) as followups,
+        (SELECT COUNT(*) FROM knowledge) as knowledge,
+        (SELECT COUNT(*) FROM study_tasks) as study_tasks,
+        (SELECT COUNT(*) FROM study_tasks WHERE completed = 1) as study_completed,
+        (SELECT COALESCE(SUM(duration), 0) FROM coaching_sessions) as total_coaching_time`
+    )
+    .get() as {
+    transcriptions: number;
+    coaching: number;
+    followups: number;
+    knowledge: number;
+    study_tasks: number;
+    study_completed: number;
+    total_coaching_time: number;
+  };
+
+  // Daily activity for the last 7 days
+  const dailyActivity = db
+    .prepare(
+      `SELECT date, SUM(cnt) as total FROM (
+        SELECT date(created_at) as date, COUNT(*) as cnt FROM summaries
+          WHERE created_at >= datetime('now', '-7 days') GROUP BY date(created_at)
+        UNION ALL
+        SELECT date(created_at) as date, COUNT(*) as cnt FROM coaching_sessions
+          WHERE created_at >= datetime('now', '-7 days') GROUP BY date(created_at)
+        UNION ALL
+        SELECT date(created_at) as date, COUNT(*) as cnt FROM followups
+          WHERE created_at >= datetime('now', '-7 days') GROUP BY date(created_at)
+      ) GROUP BY date ORDER BY date`
+    )
+    .all() as { date: string; total: number }[];
+
+  return { counts, dailyActivity };
+}
+
 // ─── Unified History Timeline ────────────────────────────
 
 export type TimelineItem = {

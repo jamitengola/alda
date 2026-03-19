@@ -13,6 +13,7 @@ import {
   Mic,
   Sparkles,
   Monitor,
+  TrendingUp,
 } from "lucide-react";
 
 const WIDGETS = [
@@ -93,14 +94,46 @@ const APP_CONTEXT: Record<string, { label: string; hint: string }> = {
 
 export default function DashboardPage() {
   const [activeApp, setActiveApp] = useState<{ name: string; bundleId: string } | null>(null);
+  const [stats, setStats] = useState<{
+    counts: {
+      transcriptions: number;
+      coaching: number;
+      followups: number;
+      knowledge: number;
+      study_tasks: number;
+      study_completed: number;
+      total_coaching_time: number;
+    };
+    dailyActivity: { date: string; total: number }[];
+  } | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.alda) return;
     window.alda.onActiveAppChanged((info) => setActiveApp(info));
   }, []);
 
+  useEffect(() => {
+    fetch("/api/dashboard-stats")
+      .then((r) => r.json())
+      .then(setStats)
+      .catch(() => {});
+  }, []);
+
   const ctx = activeApp ? APP_CONTEXT[activeApp.bundleId] : null;
   const appLabel = ctx?.label || activeApp?.name || null;
+
+  const totalItems = stats
+    ? stats.counts.transcriptions + stats.counts.coaching + stats.counts.followups
+    : 0;
+  const maxDaily = stats ? Math.max(...stats.dailyActivity.map((d) => d.total), 1) : 1;
+
+  // Day labels for the last 7 days
+  const dayLabels = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return { key: d.toISOString().slice(0, 10), label: d.toLocaleDateString("pt-BR", { weekday: "short" }).slice(0, 3) };
+  });
+
   return (
     <div className="h-full flex items-end justify-end pb-14 pr-2">
       <div
@@ -145,6 +178,39 @@ export default function DashboardPage() {
             </Link>
           ))}
         </div>
+
+        {/* ── Analytics mini strip ── */}
+        {stats && totalItems > 0 && (
+          <div className="widget-compact px-3.5 py-2.5 mt-1 animate-[widget-pop_0.3s_ease-out_backwards]" style={{ animationDelay: "350ms" }}>
+            <div className="flex items-center gap-1.5 mb-2">
+              <TrendingUp className="h-3 w-3 text-green-400" />
+              <span className="text-[10px] font-semibold opacity-60">Atividade · 7 dias</span>
+            </div>
+            {/* Mini bar chart */}
+            <div className="flex items-end gap-1 h-8 mb-2">
+              {dayLabels.map(({ key, label }) => {
+                const day = stats.dailyActivity.find((d) => d.date === key);
+                const count = day?.total ?? 0;
+                const pct = count > 0 ? Math.max((count / maxDaily) * 100, 10) : 4;
+                return (
+                  <div key={key} className="flex-1 flex flex-col items-center gap-0.5" title={`${label}: ${count}`}>
+                    <div
+                      className={`w-full rounded-sm transition-all ${count > 0 ? "bg-green-500/70" : "bg-white/5"}`}
+                      style={{ height: `${pct}%` }}
+                    />
+                    <span className="text-[7px] opacity-30">{label}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Quick counts */}
+            <div className="flex items-center gap-3 text-[9px] opacity-50">
+              <span>{stats.counts.coaching} sessões</span>
+              <span>{stats.counts.transcriptions} transcrições</span>
+              <span>{stats.counts.followups} follow-ups</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
