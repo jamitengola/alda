@@ -8,6 +8,7 @@ import {
   BrainCircuit,
   ClipboardList,
   FileText,
+  History,
   MessageSquareReply,
   Mic,
   Sparkles,
@@ -63,6 +64,13 @@ const WIDGETS = [
     title: "Performance",
     accent: "bg-pink-500",
     glow: "shadow-pink-500/20",
+  },
+  {
+    href: "/historico",
+    icon: History,
+    title: "Histórico",
+    accent: "bg-indigo-500",
+    glow: "shadow-indigo-500/20",
   },
 ];
 

@@ -8,6 +8,7 @@ import {
   BrainCircuit,
   ClipboardList,
   FileText,
+  History,
   LayoutDashboard,
   MessageSquareReply,
   Mic,
@@ -24,6 +25,7 @@ const MODULES = [
   { href: "/followup", icon: MessageSquareReply, title: "Follow-up", desc: "Emails e checklists pós-reunião" },
   { href: "/conhecimento", icon: FileText, title: "Base de Conhecimento", desc: "Busca semântica RAG" },
   { href: "/performance", icon: BarChart3, title: "Performance", desc: "Métricas das sessões" },
+  { href: "/historico", icon: History, title: "Histórico", desc: "Timeline de sessões com busca" },
 ];
 
 interface SpotlightProps {

@@ -252,3 +252,105 @@ export function getCoachingStats() {
   };
   return row;
 }
+
+// ─── Unified History Timeline ────────────────────────────
+
+export type TimelineItem = {
+  id: string;
+  type: "coaching" | "transcription" | "followup";
+  title: string;
+  preview: string;
+  meta: string;
+  created_at: string;
+};
+
+export function getTimeline(search?: string, limit = 50): TimelineItem[] {
+  const db = getDb();
+  const q = search ? `%${search}%` : null;
+
+  const coaching = db
+    .prepare(
+      q
+        ? `SELECT id, 'coaching' as type, COALESCE(topic,'Sessão') as title, mode, duration, word_count, created_at FROM coaching_sessions WHERE topic LIKE ? OR mode LIKE ? ORDER BY created_at DESC LIMIT ?`
+        : `SELECT id, 'coaching' as type, COALESCE(topic,'Sessão') as title, mode, duration, word_count, created_at FROM coaching_sessions ORDER BY created_at DESC LIMIT ?`
+    )
+    .all(...(q ? [q, q, limit] : [limit])) as {
+    id: string;
+    type: "coaching";
+    title: string;
+    mode: string;
+    duration: number;
+    word_count: number;
+    created_at: string;
+  }[];
+
+  const transcriptions = db
+    .prepare(
+      q
+        ? `SELECT id, 'transcription' as type, summary, transcript, created_at FROM summaries WHERE summary LIKE ? OR transcript LIKE ? ORDER BY created_at DESC LIMIT ?`
+        : `SELECT id, 'transcription' as type, summary, transcript, created_at FROM summaries ORDER BY created_at DESC LIMIT ?`
+    )
+    .all(...(q ? [q, q, limit] : [limit])) as {
+    id: string;
+    type: "transcription";
+    summary: string;
+    transcript: string;
+    created_at: string;
+  }[];
+
+  const followups = db
+    .prepare(
+      q
+        ? `SELECT id, 'followup' as type, context, followup, created_at FROM followups WHERE context LIKE ? OR followup LIKE ? ORDER BY created_at DESC LIMIT ?`
+        : `SELECT id, 'followup' as type, context, followup, created_at FROM followups ORDER BY created_at DESC LIMIT ?`
+    )
+    .all(...(q ? [q, q, limit] : [limit])) as {
+    id: string;
+    type: "followup";
+    context: string;
+    followup: string;
+    created_at: string;
+  }[];
+
+  const items: TimelineItem[] = [
+    ...coaching.map((c) => ({
+      id: c.id,
+      type: c.type,
+      title: c.title || "Sessão de coaching",
+      preview: `Modo: ${c.mode} · ${c.word_count} palavras`,
+      meta: `${Math.floor(c.duration / 60)}min`,
+      created_at: c.created_at,
+    })),
+    ...transcriptions.map((t) => ({
+      id: t.id,
+      type: t.type,
+      title: t.summary.slice(0, 80) + (t.summary.length > 80 ? "..." : ""),
+      preview: t.transcript.slice(0, 120) + (t.transcript.length > 120 ? "..." : ""),
+      meta: "",
+      created_at: t.created_at,
+    })),
+    ...followups.map((f) => ({
+      id: f.id,
+      type: f.type,
+      title: "Follow-up",
+      preview: f.context.slice(0, 120) + (f.context.length > 120 ? "..." : ""),
+      meta: "",
+      created_at: f.created_at,
+    })),
+  ];
+
+  items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  return items.slice(0, limit);
+}
+
+export function getTimelineItem(id: string, type: string) {
+  const db = getDb();
+  if (type === "coaching") {
+    return db.prepare(`SELECT * FROM coaching_sessions WHERE id = ?`).get(id);
+  } else if (type === "transcription") {
+    return db.prepare(`SELECT * FROM summaries WHERE id = ?`).get(id);
+  } else if (type === "followup") {
+    return db.prepare(`SELECT * FROM followups WHERE id = ?`).get(id);
+  }
+  return null;
+}
