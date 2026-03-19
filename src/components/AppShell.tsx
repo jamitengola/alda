@@ -21,8 +21,22 @@ import ProviderBadge from "@/components/ProviderBadge";
 import ThemeToggle from "@/components/ThemeToggle";
 import Spotlight from "@/components/Spotlight";
 import ClipboardActions from "@/components/ClipboardActions";
+import ProactiveNotification from "@/components/ProactiveNotification";
 import ToastContainer, { toast } from "@/components/Toast";
 import { formatTime } from "@/lib/utils";
+
+// ── Proactive notification rules (bundleId → suggestion) ──
+const NOTIFY_RULES: Record<string, { message: string; route: string; actionLabel: string }> = {
+  "us.zoom.xos": { message: "Reunião detectada no Zoom", route: "/assistente", actionLabel: "Ativar coaching ao vivo" },
+  "com.microsoft.teams2": { message: "Reunião detectada no Teams", route: "/assistente", actionLabel: "Ativar coaching ao vivo" },
+  "com.apple.iWork.Keynote": { message: "Keynote aberto — hora de ensaiar?", route: "/preparacao", actionLabel: "Preparar apresentação" },
+  "com.microsoft.Powerpoint": { message: "PowerPoint aberto — hora de ensaiar?", route: "/preparacao", actionLabel: "Preparar apresentação" },
+  "com.microsoft.VSCode": { message: "VS Code ativo — precisa de ajuda?", route: "/assistente", actionLabel: "Coaching de código" },
+  "com.apple.dt.Xcode": { message: "Xcode ativo — precisa de ajuda?", route: "/assistente", actionLabel: "Coaching de código" },
+  "com.microsoft.Outlook": { message: "E-mail aberto — gerar follow-up?", route: "/followup", actionLabel: "Criar follow-up" },
+  "com.apple.mail": { message: "Mail aberto — gerar follow-up?", route: "/followup", actionLabel: "Criar follow-up" },
+  "com.tinyspeck.slackmacgap": { message: "Slack ativo — resposta inteligente?", route: "/followup", actionLabel: "Gerar resposta" },
+};
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   useElectronNav();
@@ -36,6 +50,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [isElectron, setIsElectron] = useState(false);
   const [clipboardText, setClipboardText] = useState<string | null>(null);
   const clipboardTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Proactive notifications ──
+  const [proactiveNotif, setProactiveNotif] = useState<{
+    message: string;
+    route: string;
+    actionLabel: string;
+  } | null>(null);
+  const lastNotifiedBundle = useRef<string>("");
+  const notifCooldowns = useRef<Record<string, number>>({});
 
   // ── Global dictation ──
   const [showDictation, setShowDictation] = useState(false);
@@ -89,6 +112,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       // Auto-dismiss after 15s
       if (clipboardTimer.current) clearTimeout(clipboardTimer.current);
       clipboardTimer.current = setTimeout(() => setClipboardText(null), 15000);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Proactive notification on active app change ──
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.alda) return;
+    window.alda.onActiveAppChanged(({ bundleId }) => {
+      // Same app as last notification — skip
+      if (bundleId === lastNotifiedBundle.current) return;
+      const rule = NOTIFY_RULES[bundleId];
+      if (!rule) return;
+      // Cooldown: 5 minutes per bundle
+      const now = Date.now();
+      const last = notifCooldowns.current[bundleId] || 0;
+      if (now - last < 5 * 60 * 1000) return;
+      notifCooldowns.current[bundleId] = now;
+      lastNotifiedBundle.current = bundleId;
+      setProactiveNotif(rule);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -334,6 +375,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* ── Clipboard Actions popup ── */}
       {clipboardText && (
         <ClipboardActions text={clipboardText} onClose={() => setClipboardText(null)} />
+      )}
+
+      {/* ── Proactive Notification ── */}
+      {proactiveNotif && (
+        <ProactiveNotification
+          message={proactiveNotif.message}
+          route={proactiveNotif.route}
+          actionLabel={proactiveNotif.actionLabel}
+          onDismiss={() => setProactiveNotif(null)}
+        />
       )}
 
       <ToastContainer />
