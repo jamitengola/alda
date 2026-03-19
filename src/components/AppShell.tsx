@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -10,13 +10,19 @@ import {
   ShieldCheck,
   Command,
   BrainCircuit,
+  Mic,
+  MicOff,
+  Send,
+  X,
 } from "lucide-react";
 import { useElectronNav } from "@/hooks/useElectronNav";
+import useSpeechRecognition from "@/hooks/useSpeechRecognition";
 import ProviderBadge from "@/components/ProviderBadge";
 import ThemeToggle from "@/components/ThemeToggle";
 import Spotlight from "@/components/Spotlight";
 import ClipboardActions from "@/components/ClipboardActions";
-import ToastContainer from "@/components/Toast";
+import ToastContainer, { toast } from "@/components/Toast";
+import { formatTime } from "@/lib/utils";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   useElectronNav();
@@ -30,6 +36,38 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [isElectron, setIsElectron] = useState(false);
   const [clipboardText, setClipboardText] = useState<string | null>(null);
   const clipboardTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Global dictation ──
+  const [showDictation, setShowDictation] = useState(false);
+  const speech = useSpeechRecognition("pt-BR");
+  const speechRef = useRef(speech);
+  speechRef.current = speech;
+
+  const startDictation = useCallback(() => {
+    setShowDictation(true);
+    speech.reset();
+    speech.start();
+  }, [speech]);
+
+  const stopDictation = useCallback(() => {
+    speech.stop();
+  }, [speech]);
+
+  const sendDictation = useCallback(() => {
+    const text = speechRef.current.transcript.trim();
+    if (text) {
+      window.dispatchEvent(new CustomEvent("alda-dictation", { detail: text }));
+      toast("Texto inserido no campo ativo!");
+    }
+    speechRef.current.reset();
+    setShowDictation(false);
+  }, []);
+
+  const cancelDictation = useCallback(() => {
+    speech.stop();
+    speech.reset();
+    setShowDictation(false);
+  }, [speech]);
 
   // Detect Electron & make background transparent
   useEffect(() => {
@@ -196,6 +234,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </button>
 
+          <button
+            onClick={showDictation ? stopDictation : startDictation}
+            className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
+              showDictation && speech.isListening
+                ? "bg-red-500/20 text-red-400 animate-pulse"
+                : "hover:bg-white/10 opacity-60 hover:opacity-100"
+            }`}
+            title="Ditado por voz"
+          >
+            {showDictation && speech.isListening ? (
+              <MicOff className="h-4 w-4" />
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
+          </button>
+
           {stealth && (
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-500/15 text-green-500">
               <ShieldCheck className="h-4 w-4" />
@@ -210,6 +264,69 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
+
+      {/* ── Dictation Widget (above Dock) ── */}
+      {showDictation && (
+        <div
+          data-interactive
+          className="fixed bottom-[70px] left-1/2 z-[999] -translate-x-1/2 w-[420px]"
+        >
+          <div className="dock-glass p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                {speech.isListening ? (
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+                  </span>
+                ) : (
+                  <span className="h-2.5 w-2.5 rounded-full bg-gray-400" />
+                )}
+                <span className="text-xs font-medium opacity-60">
+                  {speech.isListening ? `Gravando ${formatTime(speech.elapsed)}` : "Pausado"}
+                </span>
+              </div>
+              <button onClick={cancelDictation} className="opacity-40 hover:opacity-100 transition-opacity">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <div className="rounded-lg bg-black/20 p-3 min-h-[60px] max-h-[120px] overflow-y-auto styled-scroll mb-3">
+              <p className="text-sm">
+                {speech.transcript || <span className="opacity-30 italic">Fale algo...</span>}
+                {speech.interimText && (
+                  <span className="opacity-40"> {speech.interimText}</span>
+                )}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={speech.isListening ? stopDictation : () => speech.start()}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                  speech.isListening
+                    ? "bg-red-500/80 text-white hover:bg-red-600"
+                    : "bg-white/10 hover:bg-white/20"
+                }`}
+              >
+                {speech.isListening ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+                {speech.isListening ? "Parar" : "Continuar"}
+              </button>
+              <button
+                onClick={sendDictation}
+                disabled={!speech.transcript.trim()}
+                className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-30 px-3 py-1.5 text-xs font-medium text-white transition-colors"
+              >
+                <Send className="h-3 w-3" />
+                Inserir no campo
+              </button>
+              {speech.error && (
+                <span className="text-[10px] text-red-400 ml-auto">{speech.error}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Spotlight ── */}
       {showSpotlight && <Spotlight onClose={() => setShowSpotlight(false)} />}

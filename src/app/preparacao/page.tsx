@@ -5,6 +5,7 @@ import { ClipboardList, Users, Target, StickyNote, Sparkles, Mic, MessageSquare,
 import LoadingButton from "@/components/LoadingButton";
 import ResultCard from "@/components/ResultCard";
 import { toast } from "@/components/Toast";
+import useDictation from "@/hooks/useDictation";
 
 type Tab = "briefing" | "entrevista";
 
@@ -28,6 +29,11 @@ export default function PreparacaoPage() {
   const [loadingInterview, setLoadingInterview] = useState(false);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [completedQs, setCompletedQs] = useState<Set<number>>(new Set());
+
+  useDictation((text) => {
+    if (tab === "briefing") setNotes((prev) => prev ? `${prev} ${text}` : text);
+    else setAnswer((prev) => prev ? `${prev} ${text}` : text);
+  });
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

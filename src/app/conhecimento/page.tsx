@@ -5,6 +5,7 @@ import { FileText, Plus, Search, Database } from "lucide-react";
 import LoadingButton from "@/components/LoadingButton";
 import ResultCard from "@/components/ResultCard";
 import { toast } from "@/components/Toast";
+import useDictation from "@/hooks/useDictation";
 
 type KnowledgeNote = {
   id: string;
@@ -21,6 +22,8 @@ export default function ConhecimentoPage() {
   const [items, setItems] = useState<KnowledgeNote[]>([]);
   const [loadingAdd, setLoadingAdd] = useState(false);
   const [loadingQuery, setLoadingQuery] = useState(false);
+
+  useDictation((text) => setContent((prev) => prev ? `${prev} ${text}` : text));
 
   async function onAdd(e: FormEvent) {
     e.preventDefault();

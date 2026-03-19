@@ -5,6 +5,7 @@ import { Copy, Mail, Download, Clock, MessageSquareReply, Send } from "lucide-re
 import LoadingButton from "@/components/LoadingButton";
 import ResultCard from "@/components/ResultCard";
 import { toast } from "@/components/Toast";
+import useDictation from "@/hooks/useDictation";
 
 type HistoryItem = {
   id: number;
@@ -20,6 +21,8 @@ export default function FollowupPage() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  useDictation((text) => setContext((prev) => prev ? `${prev} ${text}` : text));
 
   const loadHistory = useCallback(async () => {
     try {
