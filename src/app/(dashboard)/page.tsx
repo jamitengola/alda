@@ -14,6 +14,8 @@ import {
   Sparkles,
   Monitor,
   TrendingUp,
+  Download,
+  Upload,
 } from "lucide-react";
 
 const WIDGETS = [
@@ -134,6 +136,40 @@ export default function DashboardPage() {
     return { key: d.toISOString().slice(0, 10), label: d.toLocaleDateString("pt-BR", { weekday: "short" }).slice(0, 3) };
   });
 
+  const handleExport = async () => {
+    const res = await fetch("/api/sync");
+    const data = await res.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `alda-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const res = await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        setStats(null);
+        fetch("/api/dashboard-stats").then((r) => r.json()).then(setStats);
+      }
+    };
+    input.click();
+  };
+
   return (
     <div className="h-full flex items-end justify-end pb-14 pr-2">
       <div
@@ -211,6 +247,26 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* ── Backup / Restore ── */}
+        <div className="flex gap-1.5 mt-1">
+          <button
+            onClick={handleExport}
+            data-interactive
+            className="widget-compact flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-[10px] opacity-40 hover:opacity-80 transition-opacity"
+          >
+            <Download className="h-3 w-3" />
+            Backup
+          </button>
+          <button
+            onClick={handleImport}
+            data-interactive
+            className="widget-compact flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-[10px] opacity-40 hover:opacity-80 transition-opacity"
+          >
+            <Upload className="h-3 w-3" />
+            Restaurar
+          </button>
+        </div>
       </div>
     </div>
   );

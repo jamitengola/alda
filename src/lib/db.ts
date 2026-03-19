@@ -76,6 +76,63 @@ export function getDb(): Database.Database {
   return _db;
 }
 
+// ─── Sync: Export / Import ───────────────────────────────
+
+export function exportAllData() {
+  const db = getDb();
+  return {
+    version: 1,
+    exported_at: new Date().toISOString(),
+    summaries: db.prepare("SELECT * FROM summaries").all(),
+    study_tasks: db.prepare("SELECT * FROM study_tasks").all(),
+    followups: db.prepare("SELECT * FROM followups").all(),
+    knowledge: db.prepare("SELECT id, source, content, created_at FROM knowledge").all(),
+    coaching_sessions: db.prepare("SELECT * FROM coaching_sessions").all(),
+  };
+}
+
+export function importAllData(data: ReturnType<typeof exportAllData>) {
+  const db = getDb();
+  const tx = db.transaction(() => {
+    // Summaries
+    const insSummary = db.prepare(
+      "INSERT OR IGNORE INTO summaries (id, transcript, summary, provider, created_at) VALUES (?, ?, ?, ?, ?)"
+    );
+    for (const r of data.summaries as { id: string; transcript: string; summary: string; provider: string; created_at: string }[]) {
+      insSummary.run(r.id, r.transcript, r.summary, r.provider, r.created_at);
+    }
+    // Study tasks
+    const insTask = db.prepare(
+      "INSERT OR IGNORE INTO study_tasks (id, objective, title, due_date, priority, completed, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    );
+    for (const r of data.study_tasks as { id: string; objective: string; title: string; due_date: string; priority: string; completed: number; created_at: string }[]) {
+      insTask.run(r.id, r.objective, r.title, r.due_date, r.priority, r.completed, r.created_at);
+    }
+    // Followups
+    const insFollowup = db.prepare(
+      "INSERT OR IGNORE INTO followups (id, context, followup, provider, created_at) VALUES (?, ?, ?, ?, ?)"
+    );
+    for (const r of data.followups as { id: string; context: string; followup: string; provider: string; created_at: string }[]) {
+      insFollowup.run(r.id, r.context, r.followup, r.provider, r.created_at);
+    }
+    // Knowledge (without embeddings — regenerate later)
+    const insKnowledge = db.prepare(
+      "INSERT OR IGNORE INTO knowledge (id, source, content, created_at) VALUES (?, ?, ?, ?)"
+    );
+    for (const r of data.knowledge as { id: string; source: string; content: string; created_at: string }[]) {
+      insKnowledge.run(r.id, r.source, r.content, r.created_at);
+    }
+    // Coaching sessions
+    const insCoaching = db.prepare(
+      "INSERT OR IGNORE INTO coaching_sessions (id, duration, word_count, suggestions_used, mode, topic, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    );
+    for (const r of data.coaching_sessions as { id: string; duration: number; word_count: number; suggestions_used: number; mode: string; topic: string; created_at: string }[]) {
+      insCoaching.run(r.id, r.duration, r.word_count, r.suggestions_used, r.mode, r.topic, r.created_at);
+    }
+  });
+  tx();
+}
+
 // ─── Summaries ───────────────────────────────────────────
 
 export function saveSummary(transcript: string, summary: string, provider: string) {
