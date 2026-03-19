@@ -4,6 +4,7 @@ import { FormEvent, useState, useEffect, useRef } from "react";
 import { Mic, MicOff, RotateCcw, FileText, Keyboard, Radio, AlertCircle } from "lucide-react";
 import LoadingButton from "@/components/LoadingButton";
 import ResultCard from "@/components/ResultCard";
+import ExportButtons from "@/components/ExportButtons";
 import useSpeechRecognition from "@/hooks/useSpeechRecognition";
 import { toast } from "@/components/Toast";
 import { formatTime } from "@/lib/utils";
@@ -163,6 +164,9 @@ export default function TranscricaoPage() {
         <div className="mb-4 flex items-center gap-2">
           <FileText className="h-4 w-4 text-rose-500" />
           <h2 className="text-sm font-semibold uppercase opacity-60">Resumo</h2>
+          <div className="ml-auto">
+            <ExportButtons title="Resumo — Transcrição" content={summary} filename="alda-resumo" />
+          </div>
         </div>
 
         <div className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-5 overflow-y-auto styled-scroll">

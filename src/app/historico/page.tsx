@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { History, Search, BrainCircuit, Mic, MessageSquareReply, Filter, X, FileText } from "lucide-react";
 import Skeleton from "@/components/Skeleton";
 import ResultCard from "@/components/ResultCard";
+import ExportButtons from "@/components/ExportButtons";
 
 type TimelineItem = {
   id: string;
@@ -239,11 +240,20 @@ export default function HistoricoPage() {
             <FileText className="h-4 w-4 opacity-40" />
             <h2 className="text-sm font-semibold uppercase opacity-60">Detalhe</h2>
           </div>
-          {detail && (
-            <button onClick={() => setDetail(null)} className="opacity-40 hover:opacity-100 transition-opacity">
-              <X className="h-4 w-4" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {detail && (
+              <ExportButtons
+                title={detailType === "coaching" ? "Coaching Session" : detailType === "transcription" ? "Transcrição" : "Follow-up"}
+                content={JSON.stringify(detail, null, 2)}
+                filename={`alda-${detailType}`}
+              />
+            )}
+            {detail && (
+              <button onClick={() => setDetail(null)} className="opacity-40 hover:opacity-100 transition-opacity">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-5 overflow-y-auto styled-scroll">

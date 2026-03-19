@@ -4,6 +4,7 @@ import { FormEvent, useState, useEffect, useCallback } from "react";
 import { Copy, Mail, Download, Clock, MessageSquareReply, Send } from "lucide-react";
 import LoadingButton from "@/components/LoadingButton";
 import ResultCard from "@/components/ResultCard";
+import ExportButtons from "@/components/ExportButtons";
 import { toast } from "@/components/Toast";
 import useDictation from "@/hooks/useDictation";
 
@@ -108,6 +109,9 @@ export default function FollowupPage() {
           <div className="mb-4 flex items-center gap-2">
             <Send className="h-4 w-4 text-green-500" />
             <h2 className="text-sm font-semibold uppercase opacity-60">Resultado</h2>
+            <div className="ml-auto">
+              <ExportButtons title="Follow-up" content={followup} filename="alda-followup" />
+            </div>
           </div>
 
           <div className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-5 overflow-y-auto styled-scroll">

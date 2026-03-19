@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { ClipboardList, Users, Target, StickyNote, Sparkles, Mic, MessageSquare, ChevronRight, CheckCircle } from "lucide-react";
 import LoadingButton from "@/components/LoadingButton";
 import ResultCard from "@/components/ResultCard";
+import ExportButtons from "@/components/ExportButtons";
 import { toast } from "@/components/Toast";
 import useDictation from "@/hooks/useDictation";
 
@@ -207,6 +208,9 @@ export default function PreparacaoPage() {
               <div className="mb-3 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-cyan-500" />
                 <h2 className="text-sm font-semibold uppercase opacity-60">Briefing</h2>
+                <div className="ml-auto">
+                  <ExportButtons title="Briefing — Preparação" content={briefing} filename="alda-briefing" />
+                </div>
               </div>
 
               <div className="flex-1 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-5 overflow-y-auto styled-scroll">
