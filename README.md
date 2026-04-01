@@ -1,12 +1,14 @@
-# ALDA Assistant (MVP)
+# ALDA — Coach de IA para Reuniões de Alto Impacto
 
-MVP inspirado no fluxo do Cluely para produtividade em tarefas e formações, com foco em:
+Coaching em tempo real, preparação inteligente e follow-up automático — tudo invisível no seu Mac.
 
-- Transcrição + resumo
-- Assistente em tempo real (Q&A)
-- Plano de estudos com tarefas
-- Follow-up automático
-- Base de conhecimento pessoal (RAG simples)
+## O que faz
+
+- **Coaching ao Vivo** — sugestões de IA em tempo real enquanto fala (vendas, pitch, negociação, objeções)
+- **Preparação de Reunião** — briefing estratégico + simulação de entrevista
+- **Transcrição + Resumo** — capture e resuma qualquer reunião
+- **Follow-up Automático** — gere emails e checklists pós-reunião com um clique
+- **Performance** — métricas e evolução das suas sessões de coaching
 
 ## Executar (Web)
 
@@ -58,14 +60,17 @@ Esse comando sobe o Next.js e abre o app em uma janela desktop.
 
 ## Estrutura principal
 
-- `src/app/page.tsx`: interface do MVP
-- `src/app/api/*`: APIs mock dos 5 módulos
-- `src/lib/knowledge-store.ts`: armazenamento em memória da base pessoal
-- `electron/main.cjs`: processo principal do desktop
+- `src/app/assistente/` — Coaching ao vivo com 6 modos (vendas, pitch, negociação, objeções, etc.)
+- `src/app/preparacao/` — Briefing estratégico + simulação de entrevista
+- `src/app/transcricao/` — Transcrição e resumo de reuniões
+- `src/app/followup/` — Follow-up automático pós-reunião
+- `src/app/performance/` — Métricas e evolução do coaching
+- `src/app/api/*` — APIs de IA para cada módulo
+- `electron/main.cjs` — App desktop macOS com overlay transparente
 
-## Próximos passos recomendados
+## Próximos passos
 
-- Integrar STT real (ex.: Whisper/Azure Speech)
-- Melhorar prompts e adicionar seleção de provider na interface
-- Persistir dados em banco (SQLite/Postgres)
-- Adicionar autenticação e workspace por usuário
+- Autenticação de utilizador (email + código)
+- Modelo freemium (3 sessões/mês grátis)
+- Integração com calendário para sugerir preparação automática
+- Score de performance por sessão

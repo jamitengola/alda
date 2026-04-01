@@ -11,6 +11,9 @@ import {
   Save,
   Radio,
   AlertCircle,
+  Target,
+  Presentation,
+  Handshake,
 } from "lucide-react";
 import ResultCard from "@/components/ResultCard";
 import Skeleton from "@/components/Skeleton";
@@ -18,10 +21,13 @@ import { toast } from "@/components/Toast";
 import useSpeechRecognition from "@/hooks/useSpeechRecognition";
 import { formatTime } from "@/lib/utils";
 
-type CoachingMode = "coaching" | "objection" | "question";
+type CoachingMode = "coaching" | "objection" | "question" | "sales" | "pitch" | "negotiation";
 
 const MODES: { key: CoachingMode; label: string; icon: typeof Zap; color: string; bg: string }[] = [
   { key: "coaching", label: "Coaching", icon: Zap, color: "text-blue-400", bg: "bg-blue-600" },
+  { key: "sales", label: "Vendas", icon: Target, color: "text-emerald-400", bg: "bg-emerald-600" },
+  { key: "pitch", label: "Pitch", icon: Presentation, color: "text-orange-400", bg: "bg-orange-600" },
+  { key: "negotiation", label: "Negociação", icon: Handshake, color: "text-cyan-400", bg: "bg-cyan-600" },
   { key: "objection", label: "Objeções", icon: ShieldCheck, color: "text-amber-400", bg: "bg-amber-600" },
   { key: "question", label: "Perguntas", icon: HelpCircle, color: "text-purple-400", bg: "bg-purple-600" },
 ];

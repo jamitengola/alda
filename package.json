@@ -1,7 +1,7 @@
 {
   "name": "alda",
   "version": "0.1.0",
-  "description": "ALDA — Assistente Local de Desenvolvimento e Aprendizagem",
+  "description": "ALDA — Coach de IA para Reuniões de Alto Impacto",
   "author": "ALDA Team",
   "private": true,
   "main": "electron/main.cjs",

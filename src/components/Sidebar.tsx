@@ -4,24 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
-  BookOpen,
   BrainCircuit,
   ClipboardList,
-  FileText,
   LayoutDashboard,
   MessageSquareReply,
   Mic,
+  History,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/transcricao", label: "Transcrição", icon: Mic },
-  { href: "/assistente", label: "Coaching", icon: BrainCircuit },
+  { href: "/assistente", label: "Coaching ao Vivo", icon: BrainCircuit },
   { href: "/preparacao", label: "Preparação", icon: ClipboardList },
-  { href: "/estudos", label: "Estudos", icon: BookOpen },
+  { href: "/transcricao", label: "Transcrição", icon: Mic },
   { href: "/followup", label: "Follow-up", icon: MessageSquareReply },
-  { href: "/conhecimento", label: "Conhecimento", icon: FileText },
   { href: "/performance", label: "Performance", icon: BarChart3 },
+  { href: "/historico", label: "Histórico", icon: History },
 ];
 
 export default function Sidebar() {
@@ -31,7 +29,10 @@ export default function Sidebar() {
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r bg-zinc-50 dark:bg-zinc-950">
       <div className="flex items-center gap-2 border-b px-5 py-4">
         <BrainCircuit className="h-6 w-6 text-blue-600" />
-        <span className="text-lg font-bold tracking-tight">ALDA</span>
+        <div>
+          <span className="text-lg font-bold tracking-tight">ALDA</span>
+          <p className="text-[9px] text-zinc-400 -mt-0.5">Coach de Reuniões</p>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
@@ -55,7 +56,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="border-t px-5 py-3 text-xs opacity-50">
-        ALDA v0.3
+        ALDA v1.0 · Coaching
       </div>
     </aside>
   );

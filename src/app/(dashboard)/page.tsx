@@ -4,11 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   BarChart3,
-  BookOpen,
   BrainCircuit,
   ClipboardList,
-  FileText,
-  History,
   MessageSquareReply,
   Mic,
   Sparkles,
@@ -16,89 +13,72 @@ import {
   TrendingUp,
   Download,
   Upload,
-  Laptop,
+  Radio,
+  Calendar,
+  Clock,
+  Target,
+  ArrowRight,
 } from "lucide-react";
 
-const WIDGETS = [
+const QUICK_ACTIONS = [
   {
     href: "/assistente",
     icon: BrainCircuit,
-    title: "Coaching",
+    title: "Coaching ao Vivo",
+    desc: "Inicie uma sessão de coaching em tempo real",
     accent: "bg-blue-500",
     glow: "shadow-blue-500/20",
+    primary: true,
+  },
+  {
+    href: "/preparacao",
+    icon: ClipboardList,
+    title: "Preparar Reunião",
+    desc: "Gere um briefing estratégico",
+    accent: "bg-cyan-500",
+    glow: "shadow-cyan-500/20",
+    primary: false,
   },
   {
     href: "/transcricao",
     icon: Mic,
     title: "Transcrição",
+    desc: "Resuma uma reunião ou apresentação",
     accent: "bg-rose-500",
     glow: "shadow-rose-500/20",
-  },
-  {
-    href: "/preparacao",
-    icon: ClipboardList,
-    title: "Preparação",
-    accent: "bg-cyan-500",
-    glow: "shadow-cyan-500/20",
-  },
-  {
-    href: "/estudos",
-    icon: BookOpen,
-    title: "Estudos",
-    accent: "bg-amber-500",
-    glow: "shadow-amber-500/20",
+    primary: false,
   },
   {
     href: "/followup",
     icon: MessageSquareReply,
     title: "Follow-up",
+    desc: "Gere comunicação pós-reunião",
     accent: "bg-green-500",
     glow: "shadow-green-500/20",
-  },
-  {
-    href: "/conhecimento",
-    icon: FileText,
-    title: "Conhecimento",
-    accent: "bg-purple-500",
-    glow: "shadow-purple-500/20",
+    primary: false,
   },
   {
     href: "/performance",
     icon: BarChart3,
     title: "Performance",
+    desc: "Veja suas métricas de coaching",
     accent: "bg-pink-500",
     glow: "shadow-pink-500/20",
-  },
-  {
-    href: "/historico",
-    icon: History,
-    title: "Histórico",
-    accent: "bg-indigo-500",
-    glow: "shadow-indigo-500/20",
-  },
-  {
-    href: "/integracoes",
-    icon: Laptop,
-    title: "Integrações",
-    accent: "bg-teal-500",
-    glow: "shadow-teal-500/20",
+    primary: false,
   },
 ];
 
 // Map known bundle IDs to friendly context hints
 const APP_CONTEXT: Record<string, { label: string; hint: string }> = {
-  "com.microsoft.VSCode": { label: "VS Code", hint: "Coaching: peça help com código" },
-  "com.apple.Safari": { label: "Safari", hint: "Transcrição: resuma a página" },
-  "com.google.Chrome": { label: "Chrome", hint: "Transcrição: resuma a página" },
-  "us.zoom.xos": { label: "Zoom", hint: "Coaching ao vivo disponível" },
-  "com.microsoft.teams2": { label: "Teams", hint: "Coaching ao vivo disponível" },
-  "com.apple.MobileSMS": { label: "Mensagens", hint: "Follow-up: gere resposta" },
-  "com.microsoft.Outlook": { label: "Outlook", hint: "Follow-up: gere resposta" },
-  "com.apple.mail": { label: "Mail", hint: "Follow-up: gere resposta" },
-  "com.tinyspeck.slackmacgap": { label: "Slack", hint: "Coaching: prepare resposta" },
-  "com.apple.dt.Xcode": { label: "Xcode", hint: "Coaching: peça help com código" },
-  "com.apple.iWork.Keynote": { label: "Keynote", hint: "Preparação: ensaie a apresentação" },
-  "com.microsoft.Powerpoint": { label: "PowerPoint", hint: "Preparação: ensaie a apresentação" },
+  "us.zoom.xos": { label: "Zoom", hint: "Ativar coaching ao vivo" },
+  "com.microsoft.teams2": { label: "Teams", hint: "Ativar coaching ao vivo" },
+  "com.apple.iWork.Keynote": { label: "Keynote", hint: "Preparar a apresentação" },
+  "com.microsoft.Powerpoint": { label: "PowerPoint", hint: "Preparar a apresentação" },
+  "com.microsoft.Outlook": { label: "Outlook", hint: "Gerar follow-up" },
+  "com.apple.mail": { label: "Mail", hint: "Gerar follow-up" },
+  "com.tinyspeck.slackmacgap": { label: "Slack", hint: "Preparar resposta" },
+  "com.google.Chrome": { label: "Chrome", hint: "" },
+  "com.apple.Safari": { label: "Safari", hint: "" },
   "com.apple.finder": { label: "Finder", hint: "" },
 };
 
@@ -182,7 +162,7 @@ export default function DashboardPage() {
     <div className="h-full flex items-end justify-end pb-14 pr-2">
       <div
         data-interactive
-        className="flex flex-col gap-2 w-[280px]"
+        className="flex flex-col gap-2 w-[320px]"
       >
         {/* Header chip */}
         <div className="widget-compact flex items-center gap-2.5 px-3.5 py-2.5 mb-1">
@@ -191,27 +171,43 @@ export default function DashboardPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-gray-900 dark:text-white">ALDA</p>
-            {appLabel ? (
-              <p className="text-[9px] text-gray-500 dark:text-gray-400 truncate flex items-center gap-1">
-                <Monitor className="h-2.5 w-2.5 shrink-0" />
-                {appLabel}
-                {ctx?.hint && <span className="opacity-60">· {ctx.hint}</span>}
-              </p>
-            ) : (
-              <p className="text-[9px] text-gray-500 dark:text-gray-400">⌘K buscar · ⌘⇧A toggle</p>
-            )}
+            <p className="text-[9px] text-gray-500 dark:text-gray-400">Coach de IA para reuniões</p>
           </div>
+          {appLabel && (
+            <span className="text-[9px] text-gray-400 dark:text-gray-500 flex items-center gap-1 shrink-0">
+              <Monitor className="h-2.5 w-2.5" />
+              {appLabel}
+            </span>
+          )}
         </div>
 
-        {/* Widget pills */}
+        {/* ── Hero CTA: Start Coaching ── */}
+        <Link
+          href="/assistente"
+          data-interactive
+          className="widget-compact group flex items-center gap-3 px-4 py-3.5 hover:shadow-lg shadow-blue-500/20 border-blue-500/20 animate-[widget-pop_0.3s_ease-out_backwards]"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500">
+            <Radio className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">Iniciar Coaching</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">
+              {ctx?.hint || "Sugestões de IA em tempo real"}
+            </p>
+          </div>
+          <ArrowRight className="h-4 w-4 opacity-30 group-hover:opacity-70 transition-opacity" />
+        </Link>
+
+        {/* ── Quick actions grid ── */}
         <div className="grid grid-cols-2 gap-1.5">
-          {WIDGETS.map(({ href, icon: Icon, title, accent, glow }, i) => (
+          {QUICK_ACTIONS.filter(a => !a.primary).map(({ href, icon: Icon, title, accent, glow }, i) => (
             <Link
               key={href}
               href={href}
               data-interactive
               className={`widget-compact group flex items-center gap-2.5 px-3 py-2.5 hover:shadow-lg ${glow} animate-[widget-pop_0.3s_ease-out_backwards]`}
-              style={{ animationDelay: `${i * 40}ms` }}
+              style={{ animationDelay: `${(i + 1) * 40}ms` }}
             >
               <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${accent}`}>
                 <Icon className="h-3.5 w-3.5 text-white" />
@@ -223,13 +219,34 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* ── Analytics mini strip ── */}
-        {stats && totalItems > 0 && (
-          <div className="widget-compact px-3.5 py-2.5 mt-1 animate-[widget-pop_0.3s_ease-out_backwards]" style={{ animationDelay: "350ms" }}>
-            <div className="flex items-center gap-1.5 mb-2">
+        {/* ── Coaching Stats ── */}
+        {stats && (
+          <div className="widget-compact px-3.5 py-2.5 mt-1 animate-[widget-pop_0.3s_ease-out_backwards]" style={{ animationDelay: "250ms" }}>
+            <div className="flex items-center gap-1.5 mb-2.5">
               <TrendingUp className="h-3 w-3 text-green-400" />
-              <span className="text-[10px] font-semibold opacity-60">Atividade · 7 dias</span>
+              <span className="text-[10px] font-semibold opacity-60">Coaching · 7 dias</span>
             </div>
+
+            {/* Stat cards */}
+            <div className="grid grid-cols-3 gap-2 mb-2.5">
+              <div className="text-center">
+                <p className="text-lg font-bold text-blue-500">{stats.counts.coaching}</p>
+                <p className="text-[8px] opacity-40">SESSÕES</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-cyan-500">
+                  {stats.counts.total_coaching_time > 0
+                    ? `${Math.round(stats.counts.total_coaching_time / 60)}m`
+                    : "0m"}
+                </p>
+                <p className="text-[8px] opacity-40">TEMPO</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-green-500">{stats.counts.followups}</p>
+                <p className="text-[8px] opacity-40">FOLLOW-UPS</p>
+              </div>
+            </div>
+
             {/* Mini bar chart */}
             <div className="flex items-end gap-1 h-8 mb-2">
               {dayLabels.map(({ key, label }) => {
@@ -239,19 +256,13 @@ export default function DashboardPage() {
                 return (
                   <div key={key} className="flex-1 flex flex-col items-center gap-0.5" title={`${label}: ${count}`}>
                     <div
-                      className={`w-full rounded-sm transition-all ${count > 0 ? "bg-green-500/70" : "bg-white/5"}`}
+                      className={`w-full rounded-sm transition-all ${count > 0 ? "bg-blue-500/70" : "bg-white/5"}`}
                       style={{ height: `${pct}%` }}
                     />
                     <span className="text-[7px] opacity-30">{label}</span>
                   </div>
                 );
               })}
-            </div>
-            {/* Quick counts */}
-            <div className="flex items-center gap-3 text-[9px] opacity-50">
-              <span>{stats.counts.coaching} sessões</span>
-              <span>{stats.counts.transcriptions} transcrições</span>
-              <span>{stats.counts.followups} follow-ups</span>
             </div>
           </div>
         )}

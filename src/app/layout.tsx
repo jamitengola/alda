@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ALDA Assistant",
-  description: "Assistente para tarefas e formações",
+  title: "ALDA — Coach de IA para Reuniões",
+  description: "Coaching em tempo real, preparação inteligente e follow-up automático para reuniões de alto impacto.",
 };
 
 export default function RootLayout({

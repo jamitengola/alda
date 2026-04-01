@@ -4,10 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   BarChart3,
-  BookOpen,
   BrainCircuit,
   ClipboardList,
-  FileText,
   History,
   LayoutDashboard,
   Laptop,
@@ -29,14 +27,12 @@ interface SpotlightItem {
 }
 
 const MODULES: SpotlightItem[] = [
-  { href: "/", icon: LayoutDashboard, title: "Dashboard", desc: "Painel de widgets", type: "route" },
+  { href: "/", icon: LayoutDashboard, title: "Dashboard", desc: "Painel de coaching", type: "route" },
   { href: "/assistente", icon: BrainCircuit, title: "Coaching ao Vivo", desc: "Sugestões em tempo real durante reuniões", type: "route" },
+  { href: "/preparacao", icon: ClipboardList, title: "Preparação de Reunião", desc: "Briefing estratégico e simulação", type: "route" },
   { href: "/transcricao", icon: Mic, title: "Transcrição + Resumo", desc: "Grave áudio ou cole texto", type: "route" },
-  { href: "/preparacao", icon: ClipboardList, title: "Preparação de Reunião", desc: "Briefing estratégico", type: "route" },
-  { href: "/estudos", icon: BookOpen, title: "Plano de Estudos", desc: "Tarefas priorizadas com prazos", type: "route" },
   { href: "/followup", icon: MessageSquareReply, title: "Follow-up", desc: "Emails e checklists pós-reunião", type: "route" },
-  { href: "/conhecimento", icon: FileText, title: "Base de Conhecimento", desc: "Busca semântica RAG", type: "route" },
-  { href: "/performance", icon: BarChart3, title: "Performance", desc: "Métricas das sessões", type: "route" },
+  { href: "/performance", icon: BarChart3, title: "Performance", desc: "Métricas das sessões de coaching", type: "route" },
   { href: "/historico", icon: History, title: "Histórico", desc: "Timeline de sessões com busca", type: "route" },
   { href: "/integracoes", icon: Laptop, title: "Integrações macOS", desc: "Calendário, Lembretes, Email e Notas", type: "route" },
 ];
