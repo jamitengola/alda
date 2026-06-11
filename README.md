@@ -1,76 +1,162 @@
-# ALDA — Coach de IA para Reuniões de Alto Impacto
+# ALDA — AI Meeting Coach
 
-Coaching em tempo real, preparação inteligente e follow-up automático — tudo invisível no seu Mac.
+ALDA is an open source AI meeting coach for preparation, real-time guidance, transcription, summaries and follow-up automation. It is designed for professionals, developers and small teams who want to improve meeting outcomes without depending on closed productivity suites.
 
-## O que faz
+> Status: early open source prototype. Contributions, issues and ideas are welcome.
 
-- **Coaching ao Vivo** — sugestões de IA em tempo real enquanto fala (vendas, pitch, negociação, objeções)
-- **Preparação de Reunião** — briefing estratégico + simulação de entrevista
-- **Transcrição + Resumo** — capture e resuma qualquer reunião
-- **Follow-up Automático** — gere emails e checklists pós-reunião com um clique
-- **Performance** — métricas e evolução das suas sessões de coaching
+## Why ALDA exists
 
-## Executar (Web)
+Many professionals lose value after meetings because preparation is rushed, decisions are not captured and follow-ups are inconsistent. ALDA explores how AI can help people prepare better, communicate clearly and leave each meeting with actionable next steps.
+
+The project is especially useful as a reusable base for Portuguese-speaking and African developer communities that want to build AI productivity tools using local-first or cloud AI providers.
+
+## Features
+
+- **Live coaching** — real-time suggestions for sales, pitch, negotiation, objections and difficult conversations.
+- **Meeting preparation** — strategic briefing and interview/meeting simulation.
+- **Transcription and summaries** — capture meeting content and generate clear summaries.
+- **Automatic follow-up** — draft emails, checklists and next actions after meetings.
+- **Performance tracking** — measure improvement across coaching sessions.
+- **Local and cloud AI** — use mock mode, local Ollama models or OpenAI.
+- **Desktop mode** — Electron shell for a lightweight desktop experience.
+
+## Tech stack
+
+- Next.js
+- React
+- TypeScript
+- Electron
+- SQLite via `better-sqlite3`
+- OpenAI-compatible AI provider layer
+- Ollama support for local models
+
+## Getting started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/jamitengola/alda.git
+cd alda
+```
+
+### 2. Install dependencies
 
 ```bash
 npm install
-npm run dev
 ```
 
-Acesse `http://localhost:3000`.
-
-## Modelos locais e cloud
-
-O projeto suporta ambos por variável de ambiente:
-
-- `AI_PROVIDER=mock` (sem custo, respostas mock)
-- `AI_PROVIDER=ollama` (local/gratuito no teu computador)
-- `AI_PROVIDER=openai` (cloud)
-
-1. Copie `.env.example` para `.env.local`.
-2. Escolha o provider.
-
-### Exemplo local (Ollama)
-
-```bash
-ollama pull llama3.1:8b
-cp .env.example .env.local
-# edite: AI_PROVIDER=ollama
-npm run dev
-```
-
-Para Ollama local (`localhost`), normalmente não precisa chave.
-Se usar endpoint Ollama remoto/proxy com autenticação, preencha `OLLAMA_API_KEY`.
-
-### Exemplo cloud (OpenAI)
+### 3. Configure environment variables
 
 ```bash
 cp .env.example .env.local
-# edite: AI_PROVIDER=openai e OPENAI_API_KEY
+```
+
+Choose one provider:
+
+```bash
+AI_PROVIDER=mock
+# or
+AI_PROVIDER=ollama
+# or
+AI_PROVIDER=openai
+```
+
+### 4. Run the web app
+
+```bash
 npm run dev
 ```
 
-## Executar (Desktop - Electron)
+Open `http://localhost:3000`.
+
+### 5. Run the desktop app
 
 ```bash
 npm run desktop:dev
 ```
 
-Esse comando sobe o Next.js e abre o app em uma janela desktop.
+## AI providers
 
-## Estrutura principal
+### Mock mode
 
-- `src/app/assistente/` — Coaching ao vivo com 6 modos (vendas, pitch, negociação, objeções, etc.)
-- `src/app/preparacao/` — Briefing estratégico + simulação de entrevista
-- `src/app/transcricao/` — Transcrição e resumo de reuniões
-- `src/app/followup/` — Follow-up automático pós-reunião
-- `src/app/performance/` — Métricas e evolução do coaching
-- `src/app/api/*` — APIs de IA para cada módulo
-- `electron/main.cjs` — App desktop macOS com overlay transparente
+Useful for development without cost or external dependencies.
 
-## Próximos passos
+```env
+AI_PROVIDER=mock
+```
 
-- Autenticação de utilizador (email + código)
-- Modelo freemium (3 sessões/mês grátis)
-- Integração com calendário para sugerir preparação automática
-- Score de performance por sessão
+### Ollama local mode
+
+```bash
+ollama pull llama3.1:8b
+```
+
+```env
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.1:8b
+```
+
+### OpenAI cloud mode
+
+```env
+AI_PROVIDER=openai
+OPENAI_API_KEY=your_api_key_here
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+## Project structure
+
+```txt
+src/app/assistente/     Live coaching modes
+src/app/preparacao/     Meeting preparation and simulation
+src/app/transcricao/    Transcription and meeting summaries
+src/app/followup/       Follow-up generation
+src/app/performance/    Coaching metrics
+src/app/api/            AI APIs and backend routes
+electron/main.cjs       Desktop app entry point
+```
+
+## Open source impact
+
+ALDA can serve as a practical reference for developers who want to build AI-first productivity tools with:
+
+- local-first AI support through Ollama;
+- cloud AI support through OpenAI;
+- a modern TypeScript/Next.js codebase;
+- desktop packaging with Electron;
+- reusable workflows for meeting assistants, coaching tools and follow-up automation.
+
+The project is maintained publicly to encourage collaboration, learning and reuse by developers in Angola, Portuguese-speaking communities and the wider open source ecosystem.
+
+## Roadmap
+
+- [ ] Improve automated tests
+- [ ] Add authentication with email code
+- [ ] Add calendar integration for automatic meeting preparation
+- [ ] Improve desktop overlay experience
+- [ ] Add prompt evaluation examples
+- [ ] Add Docker support
+- [ ] Publish contributor guide examples
+- [ ] Create release notes for stable versions
+
+## Contributing
+
+Contributions are welcome. You can help by:
+
+- opening issues with bugs or ideas;
+- improving documentation;
+- adding tests;
+- improving AI prompts;
+- reviewing accessibility and user experience;
+- proposing integrations with calendar, email or CRM tools.
+
+Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before submitting a pull request.
+
+## Security
+
+Do not commit API keys, tokens, `.env.local` files or meeting data. If you find a security issue, please follow [`SECURITY.md`](SECURITY.md).
+
+## License
+
+This project is licensed under the MIT License. See [`LICENSE`](LICENSE).
