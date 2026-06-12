@@ -24,6 +24,16 @@ cp .env.example .env.local
 npm run dev
 ```
 
+## Running tests
+
+The project uses [Vitest](https://vitest.dev/) for automated testing. You can run the test suite locally with:
+
+```bash
+npm run test
+```
+
+Tests using the `mock` provider (which is the default) do not require any external API keys and will run locally.
+
 ## Pull request guidelines
 
 1. Create an issue before large changes.
