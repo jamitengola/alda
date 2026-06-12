@@ -14,6 +14,19 @@ ALDA is an early open source AI meeting coach. The project welcomes improvements
 - Help with accessibility and localization.
 - Propose integrations with calendar, email or CRM tools.
 
+## Good first issues
+
+If you are new to the project, start with [`docs/good-first-issues.md`](docs/good-first-issues.md).
+
+Good beginner areas include:
+
+- documentation improvements;
+- examples and screenshots;
+- prompt examples;
+- setup improvements;
+- accessibility improvements;
+- tests for small isolated features.
+
 ## Development setup
 
 ```bash
@@ -24,20 +37,29 @@ cp .env.example .env.local
 npm run dev
 ```
 
+## Before opening a pull request
+
+Run the basic checks locally:
+
+```bash
+npm run lint --if-present
+npm run build --if-present
+```
+
 ## Pull request guidelines
 
 1. Create an issue before large changes.
 2. Keep pull requests focused and small when possible.
 3. Explain the problem, solution and testing steps.
-4. Do not commit secrets, tokens, `.env.local` files or private meeting data.
-5. Run lint/build checks before submitting when possible.
+4. Run lint/build checks before submitting when possible.
 
 ## Suggested branch naming
 
 ```txt
 feature/add-calendar-integration
-fix/openai-provider-error-handling
+fix/provider-error-handling
 docs/improve-setup-guide
+test/add-provider-tests
 ```
 
 ## Code of conduct
