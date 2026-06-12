@@ -17,7 +17,7 @@ The project is especially useful as a reusable base for Portuguese-speaking and 
 - **Transcription and summaries** — capture meeting content and generate clear summaries.
 - **Automatic follow-up** — draft emails, checklists and next actions after meetings.
 - **Performance tracking** — measure improvement across coaching sessions.
-- **Local and cloud AI** — use mock mode, local Ollama models or OpenAI.
+- **Local and cloud AI** — use mock mode, local Ollama models or OpenAI-compatible providers.
 - **Desktop mode** — Electron shell for a lightweight desktop experience.
 
 ## Tech stack
@@ -29,6 +29,13 @@ The project is especially useful as a reusable base for Portuguese-speaking and 
 - SQLite via `better-sqlite3`
 - OpenAI-compatible AI provider layer
 - Ollama support for local models
+
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [Roadmap](docs/roadmap.md)
+- [Contributing guide](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
 ## Getting started
 
@@ -97,7 +104,7 @@ OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=llama3.1:8b
 ```
 
-### OpenAI cloud mode
+### OpenAI-compatible cloud mode
 
 ```env
 AI_PROVIDER=openai
@@ -122,7 +129,7 @@ electron/main.cjs       Desktop app entry point
 ALDA can serve as a practical reference for developers who want to build AI-first productivity tools with:
 
 - local-first AI support through Ollama;
-- cloud AI support through OpenAI;
+- cloud AI support through OpenAI-compatible providers;
 - a modern TypeScript/Next.js codebase;
 - desktop packaging with Electron;
 - reusable workflows for meeting assistants, coaching tools and follow-up automation.
@@ -131,14 +138,18 @@ The project is maintained publicly to encourage collaboration, learning and reus
 
 ## Roadmap
 
-- [ ] Improve automated tests
-- [ ] Add authentication with email code
-- [ ] Add calendar integration for automatic meeting preparation
-- [ ] Improve desktop overlay experience
-- [ ] Add prompt evaluation examples
-- [ ] Add Docker support
-- [ ] Publish contributor guide examples
-- [ ] Create release notes for stable versions
+The detailed roadmap is available in [`docs/roadmap.md`](docs/roadmap.md).
+
+Current focus:
+
+- [ ] Improve automated tests.
+- [ ] Add authentication with email code.
+- [ ] Add calendar integration for automatic meeting preparation.
+- [ ] Improve desktop overlay experience.
+- [ ] Add prompt evaluation examples.
+- [ ] Add Docker support.
+- [ ] Publish contributor guide examples.
+- [ ] Create release notes for stable versions.
 
 ## Contributing
 
