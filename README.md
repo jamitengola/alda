@@ -75,6 +75,14 @@ Open `http://localhost:3000`.
 npm run desktop:dev
 ```
 
+### 6. Run tests
+
+You can run the automated tests locally using Vitest. Mock tests do not require external API keys.
+
+```bash
+npm run test
+```
+
 ## AI providers
 
 ### Mock mode
