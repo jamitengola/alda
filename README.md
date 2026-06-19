@@ -82,6 +82,14 @@ Open `http://localhost:3000`.
 npm run desktop:dev
 ```
 
+### 6. Run tests
+
+You can run the automated tests locally using Vitest. Mock tests do not require external API keys.
+
+```bash
+npm run test
+```
+
 ## AI providers
 
 ### Mock mode
@@ -138,18 +146,11 @@ The project is maintained publicly to encourage collaboration, learning and reus
 
 ## Roadmap
 
-The detailed roadmap is available in [`docs/roadmap.md`](docs/roadmap.md).
+See [`docs/roadmap.md`](docs/roadmap.md) for the public roadmap.
 
-Current focus:
+## Good first issues
 
-- [ ] Improve automated tests.
-- [ ] Add authentication with email code.
-- [ ] Add calendar integration for automatic meeting preparation.
-- [ ] Improve desktop overlay experience.
-- [ ] Add prompt evaluation examples.
-- [ ] Add Docker support.
-- [ ] Publish contributor guide examples.
-- [ ] Create release notes for stable versions.
+New contributors can start with [`docs/good-first-issues.md`](docs/good-first-issues.md).
 
 ## Contributing
 
