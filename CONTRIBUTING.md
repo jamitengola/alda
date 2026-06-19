@@ -37,6 +37,16 @@ cp .env.example .env.local
 npm run dev
 ```
 
+## Running tests
+
+The project uses [Vitest](https://vitest.dev/) for automated testing. You can run the test suite locally with:
+
+```bash
+npm run test
+```
+
+Tests using the `mock` provider do not require external API keys and will run locally.
+
 ## Before opening a pull request
 
 Run the basic checks locally:
@@ -44,6 +54,7 @@ Run the basic checks locally:
 ```bash
 npm run lint --if-present
 npm run build --if-present
+npm run test --if-present
 ```
 
 ## Pull request guidelines
@@ -51,7 +62,7 @@ npm run build --if-present
 1. Create an issue before large changes.
 2. Keep pull requests focused and small when possible.
 3. Explain the problem, solution and testing steps.
-4. Run lint/build checks before submitting when possible.
+4. Run lint/build/test checks before submitting when possible.
 
 ## Suggested branch naming
 
