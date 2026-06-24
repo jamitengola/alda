@@ -4,6 +4,14 @@ ALDA is an open source AI meeting coach for preparation, real-time guidance, tra
 
 > Status: early open source prototype. Contributions, issues and ideas are welcome.
 
+## Demo
+
+A public demo URL will be added here when available. Until then, ALDA can be tested locally in `mock` mode without external API keys.
+
+```env
+AI_PROVIDER=mock
+```
+
 ## Why ALDA exists
 
 Many professionals lose value after meetings because preparation is rushed, decisions are not captured and follow-ups are inconsistent. ALDA explores how AI can help people prepare better, communicate clearly and leave each meeting with actionable next steps.
@@ -34,6 +42,7 @@ The project is especially useful as a reusable base for Portuguese-speaking and 
 
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
+- [Deployment guide](docs/deployment.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 
@@ -119,6 +128,10 @@ AI_PROVIDER=openai
 OPENAI_API_KEY=your_api_key_here
 OPENAI_MODEL=gpt-4.1-mini
 ```
+
+## Deployment
+
+See [`docs/deployment.md`](docs/deployment.md) for deployment instructions and recommended environment variables.
 
 ## Project structure
 
