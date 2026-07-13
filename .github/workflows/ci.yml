@@ -24,22 +24,7 @@ jobs:
         run: npm install
 
       - name: Run lint
-        id: lint
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          npm run lint --if-present 2>&1 | tee lint-output.txt
-
-      - name: Upload lint diagnostics
-        if: steps.lint.outcome == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: lint-output
-          path: lint-output.txt
-
-      - name: Fail when lint fails
-        if: steps.lint.outcome == 'failure'
-        run: exit 1
+        run: npm run lint --if-present
 
       - name: Run tests
         run: npm run test --if-present
