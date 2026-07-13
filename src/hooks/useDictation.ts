@@ -9,7 +9,10 @@ import { useEffect, useRef } from "react";
  */
 export default function useDictation(onText: (text: string) => void) {
   const callbackRef = useRef(onText);
-  callbackRef.current = onText;
+
+  useEffect(() => {
+    callbackRef.current = onText;
+  }, [onText]);
 
   useEffect(() => {
     const handler = (e: Event) => {
