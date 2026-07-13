@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, getProviderLabel } from "@/lib/ai-provider";
 
+type CoachingMode =
+  | "coaching"
+  | "objection"
+  | "question"
+  | "sales"
+  | "pitch"
+  | "negotiation";
+
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
     transcript?: string;
-    mode?: "coaching" | "objection" | "question" | "sales" | "pitch" | "negotiation";
+    mode?: CoachingMode;
   };
 
   const transcript = body.transcript?.trim() ?? "";
@@ -17,7 +25,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const systemPrompts: Record<string, string> = {
+  const systemPrompts: Record<CoachingMode, string> = {
     coaching: `Você é um coach de reuniões profissional em tempo real. Analise o que foi dito e forneça:
 1. Uma sugestão concreta de resposta ou próximo argumento (máx 2 frases)
 2. Um ponto-chave para reforçar a posição do utilizador
@@ -60,19 +68,68 @@ Analise a negociação em tempo real e forneça:
 Foque em criar valor mútuo. Responda em português.`,
   };
 
-  const fallbackMessages: Record<string, string> = {
-    coaching: `💡 Sugestão: Reforce o ponto principal e peça feedback ao interlocutor.`,
-    objection: `🛡️ Réplica: "Entendo a sua preocupação. Permita-me mostrar como resolvemos exatamente isso..."`,
-    question: `📝 Resposta sugerida: "Boa pergunta. Deixe-me contextualizar a nossa abordagem..."`,
-    sales: `💼 Próximo passo: Faça uma pergunta de qualificação — "Qual é o impacto deste problema no vosso negócio?"`,
-    pitch: `🎯 Dica: Volte ao problema central e reforce o diferencial competitivo.`,
-    negotiation: `🤝 Tática: Explore o interesse por trás da posição — "O que seria um resultado ideal para ambos?"`,
+  const contextExcerpt = transcript.replace(/\s+/g, " ").slice(-180);
+
+  const fallbackMessages: Record<CoachingMode, (excerpt: string) => string> = {
+    coaching: (excerpt) => `### Próxima fala sugerida
+“Quero reforçar o ponto principal e confirmar se estamos alinhados antes de avançarmos para a decisão.”
+
+### Leitura do momento
+O trecho mais recente foi: “${excerpt}”. Retome a ideia central e transforme-a numa pergunta objetiva.
+
+### Presença
+Fale com ritmo mais lento, mantenha contacto visual e termine a frase sem reduzir o tom de voz.`,
+
+    objection: (excerpt) => `### Réplica sugerida
+“Entendo a preocupação. Em vez de ignorarmos esse risco, proponho que definamos um piloto curto com critérios claros para medir o resultado.”
+
+### Reframing
+A objeção presente em “${excerpt}” pode ser tratada como um pedido de segurança, não como uma rejeição definitiva.
+
+### Próximo passo
+Pergunte: “Que evidência precisariam de ver para se sentirem confortáveis em avançar?”`,
+
+    question: (excerpt) => `### Resposta sugerida
+“É uma questão importante. A nossa abordagem parte de três pontos: impacto esperado, capacidade de execução e controlo de risco.”
+
+### Como desenvolver
+Use o trecho “${excerpt}” como contexto, responda primeiro à pergunta e só depois acrescente detalhes.
+
+### Redirecionamento
+Termine ligando a resposta ao resultado que a reunião precisa produzir.`,
+
+    sales: (excerpt) => `### Próxima melhor ação
+“Para percebermos se esta solução faz sentido, qual é hoje o impacto financeiro ou operacional deste problema?”
+
+### Sinal observado
+O trecho “${excerpt}” indica que ainda é necessário quantificar urgência, impacto e processo de decisão.
+
+### Pergunta de qualificação
+“Quem mais precisa participar da decisão e qual seria o prazo ideal para resolver isto?”`,
+
+    pitch: (excerpt) => `### Ajuste imediato
+Volte ao problema central e explique, numa frase, por que a solução é diferente das alternativas atuais.
+
+### Reforço de impacto
+Ligue “${excerpt}” a um resultado mensurável: tempo poupado, custo reduzido, risco evitado ou receita criada.
+
+### Alerta
+Evite acrescentar novas funcionalidades antes de confirmar que a audiência compreendeu o valor principal.`,
+
+    negotiation: (excerpt) => `### Movimento estratégico
+“Antes de discutirmos concessões, gostaria de compreender qual condição é realmente essencial para vocês.”
+
+### Leitura da posição
+O trecho “${excerpt}” pode esconder interesses de prazo, previsibilidade ou redução de risco.
+
+### Concessão recomendada
+Só ofereça uma concessão em troca de algo equivalente, como prazo, volume, compromisso ou decisão mais rápida.`,
   };
 
   const suggestion = await generateText({
     system: systemPrompts[mode] || systemPrompts.coaching,
     user: `Transcrição em tempo real: "${transcript}"`,
-    fallback: fallbackMessages[mode] || fallbackMessages.coaching,
+    fallback: (fallbackMessages[mode] || fallbackMessages.coaching)(contextExcerpt),
   });
 
   return NextResponse.json({

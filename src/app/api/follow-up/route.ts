@@ -7,16 +7,28 @@ export async function POST(request: NextRequest) {
   const context = body.context?.trim() ?? "";
 
   const fallback = [
-    "Assunto: Follow-up da sessão",
+    "Assunto: Follow-up da reunião e próximos passos",
     "",
     "Olá,",
     "",
-    "Obrigado pela sessão de hoje. Segue resumo rápido:",
-    context ? `- Contexto principal: ${context}` : "- Contexto principal: (não informado)",
-    "- Próximos passos: consolidar decisões, definir responsáveis e prazos.",
-    "- Ação sugerida: revisar este resumo em 24h para ajustes finais.",
+    "Obrigado pela reunião. Para mantermos o alinhamento, segue um resumo objetivo do que deve ser validado:",
     "",
-    "Abraço,",
+    "Contexto principal:",
+    context || "A reunião tratou do alinhamento de prioridades e definição dos próximos passos.",
+    "",
+    "Decisões a confirmar:",
+    "- Validar o objetivo e o resultado esperado.",
+    "- Confirmar o escopo, as restrições e os critérios de sucesso.",
+    "- Identificar eventuais pontos pendentes antes da execução.",
+    "",
+    "Próximas ações:",
+    "1. Consolidar as decisões num documento partilhado.",
+    "2. Definir um responsável e uma data para cada ação.",
+    "3. Rever os pontos pendentes e confirmar o próximo encontro.",
+    "",
+    "Por favor, partilhem correções ou observações para fecharmos o registo da reunião.",
+    "",
+    "Cumprimentos,",
     "ALDA Assistant",
   ].join("\n");
 
@@ -29,7 +41,6 @@ export async function POST(request: NextRequest) {
     fallback,
   });
 
-  // Persist to SQLite
   saveFollowup(context, aiFollowup, provider);
 
   return NextResponse.json({ followup: aiFollowup, provider });
