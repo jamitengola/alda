@@ -11,16 +11,34 @@ export async function POST(request: NextRequest) {
   }
 
   const lines = transcript
-    .split(/\n|\./)
+    .split(/\n|(?<=[.!?])\s+/)
     .map((line) => line.trim())
     .filter(Boolean)
-    .slice(0, 4);
+    .slice(0, 5);
 
-  const fallback = [
-    "Resumo automático:",
-    ...lines.map((line, index) => `${index + 1}. ${line}`),
-    "Ações sugeridas: consolidar dúvidas, definir próximos passos e agendar revisão.",
-  ].join("\n");
+  const mainPoint = lines[0] ?? "A reunião abordou os temas registados na transcrição.";
+  const keyPoints = lines.map((line) => `- ${line}`).join("\n");
+
+  const fallback = `## Resumo executivo
+${mainPoint}
+
+## Pontos-chave
+${keyPoints}
+
+## Decisões a confirmar
+- Validar se os pontos discutidos representam corretamente o entendimento dos participantes.
+- Confirmar quais propostas foram aprovadas e quais continuam pendentes.
+- Registar responsáveis, dependências e prazos antes de iniciar a execução.
+
+## Próximas ações recomendadas
+1. Partilhar este resumo com os participantes para validação.
+2. Converter cada decisão numa tarefa com responsável e data.
+3. Agendar uma revisão curta para os pontos que permaneceram em aberto.
+
+## Riscos de acompanhamento
+- Decisões sem responsável podem não avançar.
+- Prazos não confirmados podem gerar interpretações diferentes.
+- Pontos importantes devem ser revistos no contexto completo da transcrição.`;
 
   const provider = getProviderLabel();
 
@@ -31,7 +49,6 @@ export async function POST(request: NextRequest) {
     fallback,
   });
 
-  // Persist to SQLite
   saveSummary(transcript, aiSummary, provider);
 
   return NextResponse.json({ summary: aiSummary, provider });
