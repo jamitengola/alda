@@ -103,7 +103,9 @@ npm run test
 
 ### Mock mode
 
-Useful for development without cost or external dependencies.
+Mock mode is the default first-run experience. It does not call an external AI model or require API keys. Instead, it returns deterministic, context-aware demo responses for meeting preparation, live coaching, meeting summaries, follow-up emails and interview practice.
+
+Use it to explore the product, test the interface and contribute safely. Because no model is called, mock mode does not perform deep semantic reasoning and should not be treated as production AI output.
 
 ```env
 AI_PROVIDER=mock
