@@ -12,12 +12,103 @@ type ProviderStatus = {
   needsApiKeyWarning: boolean;
 };
 
+type RequestPolicy = {
+  timeoutMs: number;
+  maxRetries: number;
+  retryDelayMs: number;
+};
+
+const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_MAX_RETRIES = 1;
+const DEFAULT_RETRY_DELAY_MS = 250;
+
 function getProvider(): Provider {
   const raw = (process.env.AI_PROVIDER ?? "mock").toLowerCase();
   if (raw === "ollama" || raw === "openai" || raw === "mock") {
     return raw;
   }
   return "mock";
+}
+
+function parseIntegerEnv(
+  name: string,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+) {
+  const value = Number.parseInt(process.env[name] ?? "", 10);
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(Math.max(value, minimum), maximum);
+}
+
+function getRequestPolicy(): RequestPolicy {
+  return {
+    timeoutMs: parseIntegerEnv("AI_REQUEST_TIMEOUT_MS", DEFAULT_TIMEOUT_MS, 1, 120_000),
+    maxRetries: parseIntegerEnv("AI_REQUEST_MAX_RETRIES", DEFAULT_MAX_RETRIES, 0, 3),
+    retryDelayMs: parseIntegerEnv(
+      "AI_REQUEST_RETRY_DELAY_MS",
+      DEFAULT_RETRY_DELAY_MS,
+      0,
+      5_000,
+    ),
+  };
+}
+
+function isRetryableStatus(status: number) {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function wait(milliseconds: number) {
+  if (milliseconds <= 0) return Promise.resolve();
+  return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function fetchWithTimeout(
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1],
+  timeoutMs: number,
+) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchWithRetry(
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1],
+) {
+  const policy = getRequestPolicy();
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= policy.maxRetries; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(input, init, policy.timeoutMs);
+      const shouldRetry =
+        !response.ok &&
+        isRetryableStatus(response.status) &&
+        attempt < policy.maxRetries;
+
+      if (!shouldRetry) return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= policy.maxRetries) throw error;
+    }
+
+    const delay = policy.retryDelayMs * 2 ** attempt;
+    await wait(delay);
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("AI provider request failed");
 }
 
 async function generateWithOpenAI(system: string, user: string) {
@@ -29,7 +120,7 @@ async function generateWithOpenAI(system: string, user: string) {
   const endpoint = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1/chat/completions";
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
-  const response = await fetch(endpoint, {
+  const response = await fetchWithRetry(endpoint, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -69,7 +160,7 @@ async function generateWithOllama(system: string, user: string) {
     headers.Authorization = `Bearer ${apiKey}`;
   }
 
-  const response = await fetch(`${baseUrl}/api/generate`, {
+  const response = await fetchWithRetry(`${baseUrl}/api/generate`, {
     method: "POST",
     headers,
     body: JSON.stringify({
