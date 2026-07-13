@@ -27,22 +27,42 @@ export async function POST(request: NextRequest) {
     .filter(Boolean)
     .join("\n");
 
-  const fallback = `## Briefing: ${topic}
+  const fallback = `## Briefing da reunião: ${topic}
 
-### Pontos-chave para preparar
-1. Definir claramente os objetivos da reunião
-2. Preparar dados de suporte para seus argumentos
-3. Antecipar possíveis objeções
+### Resultado recomendado
+${objective || "Sair da reunião com uma decisão clara, responsáveis definidos e um próximo passo calendarizado."}
 
-### Perguntas para considerar
-- Qual é o resultado ideal desta reunião?
-- Quais concessões estou disposto a fazer?
-- Quais dados preciso apresentar?
+### Participantes e interesses
+${participants ? `- Participantes: ${participants}\n- Identifique quem decide, quem influencia e quem executará os próximos passos.` : "- Confirme quem tem poder de decisão, quem influencia o resultado e quem ficará responsável pela execução."}
 
-### Dicas
-- Comece com uma agenda clara
-- Mantenha o foco nos resultados
-- Finalize com próximos passos concretos`;
+### Pontos-chave para abordar
+1. Contextualize o problema e explique por que ele precisa de decisão agora.
+2. Apresente os dados ou evidências que sustentam a sua recomendação.
+3. Mostre o impacto esperado, os riscos e as alternativas consideradas.
+4. Termine com uma proposta concreta de decisão e próximos passos.
+
+### Perguntas estratégicas
+- Qual resultado seria considerado um sucesso por todos os participantes?
+- Que restrições de prazo, orçamento ou recursos devemos considerar?
+- O que ainda impede uma decisão nesta reunião?
+- Quem será responsável por cada ação depois da reunião?
+
+### Possíveis objeções e respostas
+- **“Ainda não temos informação suficiente.”** Proponha uma decisão reversível ou um piloto com critérios de validação.
+- **“O custo é elevado.”** Relacione o investimento com o custo de manter o problema sem solução.
+- **“Precisamos de mais tempo.”** Defina exatamente que informação falta e marque uma data objetiva para decisão.
+
+### Agenda sugerida — 30 minutos
+1. Contexto e objetivo — 5 min
+2. Evidências e opções — 10 min
+3. Debate de riscos e objeções — 8 min
+4. Decisão, responsáveis e prazos — 7 min
+
+### Checklist final
+- Levar os dados essenciais em formato simples.
+- Preparar uma recomendação principal e uma alternativa.
+- Confirmar a decisão por escrito no final.
+${notes ? `- Considerar estas notas adicionais: ${notes}` : "- Reservar os últimos minutos para alinhar responsáveis e datas."}`;
 
   const briefing = await generateText({
     system: `Você é um preparador de reuniões profissional. Crie um briefing completo em português com:
