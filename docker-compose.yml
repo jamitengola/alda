@@ -1,0 +1,20 @@
+services:
+  alda:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+      AI_REQUEST_TIMEOUT_MS: ${AI_REQUEST_TIMEOUT_MS:-15000}
+      AI_REQUEST_MAX_RETRIES: ${AI_REQUEST_MAX_RETRIES:-1}
+      AI_REQUEST_RETRY_DELAY_MS: ${AI_REQUEST_RETRY_DELAY_MS:-250}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
