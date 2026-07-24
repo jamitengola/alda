@@ -1,7 +1,17 @@
 "use client";
 
 import { FormEvent, useState, useEffect, useRef } from "react";
-import { Mic, MicOff, RotateCcw, FileText, Keyboard, Radio, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Mic,
+  MicOff,
+  RotateCcw,
+  FileText,
+  Keyboard,
+  Radio,
+  AlertCircle,
+  ArrowRight,
+} from "lucide-react";
 import LoadingButton from "@/components/LoadingButton";
 import ResultCard from "@/components/ResultCard";
 import ExportButtons from "@/components/ExportButtons";
@@ -10,6 +20,7 @@ import { toast } from "@/components/Toast";
 import { formatTime } from "@/lib/utils";
 
 export default function TranscricaoPage() {
+  const router = useRouter();
   const [manualInput, setManualInput] = useState("");
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,7 +30,6 @@ export default function TranscricaoPage() {
   const speechRef = useRef(speech);
   speechRef.current = speech;
 
-  // Listen for quick-record shortcut (⌘⇧R) — stable ref to avoid re-registering
   useEffect(() => {
     if (typeof window === "undefined" || !window.alda?.onQuickRecord) return;
     window.alda.onQuickRecord(() => {
@@ -38,7 +48,11 @@ export default function TranscricaoPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const text = mode === "record" ? speech.transcript : manualInput;
-    if (!text.trim()) return;
+    if (!text.trim()) {
+      toast("Adicione uma transcrição antes de gerar o resumo.", "error");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/transcribe-summary", {
@@ -46,17 +60,32 @@ export default function TranscricaoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcript: text }),
       });
-      const data = (await res.json()) as { summary: string };
+      const data = (await res.json()) as { summary?: string; error?: string };
+
+      if (!res.ok || !data.summary) {
+        throw new Error(data.error || "Não foi possível gerar o resumo.");
+      }
+
       setSummary(data.summary);
-      toast("Resumo gerado com sucesso!");
+      toast("Resumo gerado e guardado no histórico!");
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Erro ao gerar resumo.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
   }
 
+  function createFollowup() {
+    if (!summary) return;
+    sessionStorage.setItem("alda:followup-context", summary);
+    router.push("/followup");
+  }
+
   return (
     <div className="flex h-full gap-6 animate-[fade-in_0.4s_ease-out]">
-      {/* ─── Left: Input area ─── */}
       <div className="flex flex-1 flex-col min-w-0">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -69,13 +98,14 @@ export default function TranscricaoPage() {
             )}
           </div>
 
-          {/* Mode toggle */}
           <div className="flex rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
             <button
               type="button"
               onClick={() => setMode("type")}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
-                mode === "type" ? "bg-blue-600 text-white" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                mode === "type"
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
             >
               <Keyboard className="h-3.5 w-3.5" />
@@ -85,7 +115,9 @@ export default function TranscricaoPage() {
               type="button"
               onClick={() => setMode("record")}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
-                mode === "record" ? "bg-blue-600 text-white" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                mode === "record"
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
             >
               <Mic className="h-3.5 w-3.5" />
@@ -104,7 +136,6 @@ export default function TranscricaoPage() {
             />
           ) : (
             <div className="flex flex-1 flex-col gap-3">
-              {/* Controls */}
               <div className="flex items-center gap-3">
                 {!speech.isListening ? (
                   <button
@@ -139,33 +170,54 @@ export default function TranscricaoPage() {
                 {speech.error && (
                   <span className="inline-flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
                     <AlertCircle className="h-3.5 w-3.5" />
-                    {speech.error === "not-allowed" ? "Permissão de microfone negada" : `Erro: ${speech.error}`}
+                    {speech.error === "not-allowed"
+                      ? "Permissão de microfone negada"
+                      : `Erro: ${speech.error}`}
                   </span>
                 )}
               </div>
 
-              {/* Live transcript */}
               <div className="flex-1 min-h-[180px] rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-4 text-sm overflow-y-auto styled-scroll">
                 {currentText || (
                   <span className="italic opacity-40">
-                    {speech.isListening ? "A ouvir... fale agora." : "Clique em \"Iniciar gravação\"."}
+                    {speech.isListening
+                      ? "A ouvir... fale agora."
+                      : 'Clique em "Iniciar gravação".'}
                   </span>
                 )}
               </div>
             </div>
           )}
 
-          <LoadingButton loading={loading} label="Gerar resumo" loadingLabel="IA resumindo..." disabled={!currentText.trim()} />
+          <LoadingButton
+            loading={loading}
+            label="Gerar resumo"
+            loadingLabel="IA resumindo..."
+            disabled={!currentText.trim()}
+          />
         </form>
       </div>
 
-      {/* ─── Right: Result ─── */}
       <section className="flex w-80 shrink-0 flex-col lg:w-[420px]">
         <div className="mb-4 flex items-center gap-2">
           <FileText className="h-4 w-4 text-rose-500" />
           <h2 className="text-sm font-semibold uppercase opacity-60">Resumo</h2>
-          <div className="ml-auto">
-            <ExportButtons title="Resumo — Transcrição" content={summary} filename="alda-resumo" />
+          <div className="ml-auto flex items-center gap-2">
+            {summary && (
+              <button
+                type="button"
+                onClick={createFollowup}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
+              >
+                Criar follow-up
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <ExportButtons
+              title="Resumo — Transcrição"
+              content={summary}
+              filename="alda-resumo"
+            />
           </div>
         </div>
 
