@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, getProviderLabel } from "@/lib/ai-provider";
 import { saveSummary, listSummaries } from "@/lib/db";
+import { readJsonObject, readString } from "@/lib/api-request";
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as { transcript?: string };
-  const transcript = body.transcript?.trim() ?? "";
+  const body = await readJsonObject(request);
+
+  if (!body) {
+    return NextResponse.json({ error: "Payload JSON inválido." }, { status: 400 });
+  }
+
+  const transcript = readString(body.transcript);
 
   if (!transcript) {
-    return NextResponse.json({ summary: "Envie uma transcrição para gerar o resumo." });
+    return NextResponse.json(
+      { error: "Envie uma transcrição para gerar o resumo." },
+      { status: 400 },
+    );
   }
 
   const lines = transcript
@@ -44,14 +53,14 @@ ${keyPoints}
 
   const aiSummary = await generateText({
     system:
-      "Você resume transcrições em português de forma objetiva. Traga resumo em tópicos e 3 ações práticas.",
+      "Você resume transcrições em português de forma objetiva. Organize a resposta em resumo executivo, pontos-chave, decisões, responsáveis, prazos, riscos e próximas ações. Não invente decisões que não estejam sustentadas pela transcrição; marque-as como pendentes de confirmação.",
     user: `Transcrição:\n${transcript}`,
     fallback,
   });
 
-  saveSummary(transcript, aiSummary, provider);
+  const id = saveSummary(transcript, aiSummary, provider);
 
-  return NextResponse.json({ summary: aiSummary, provider });
+  return NextResponse.json({ id, summary: aiSummary, provider });
 }
 
 export async function GET() {
