@@ -9,7 +9,7 @@ import { toast } from "@/components/Toast";
 import useDictation from "@/hooks/useDictation";
 
 type HistoryItem = {
-  id: number;
+  id: string;
   context: string;
   followup: string;
   provider: string;
@@ -23,14 +23,28 @@ export default function FollowupPage() {
   const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  useDictation((text) => setContext((prev) => prev ? `${prev} ${text}` : text));
+  useDictation((text) =>
+    setContext((prev) => (prev ? `${prev} ${text}` : text)),
+  );
 
   const loadHistory = useCallback(async () => {
     try {
       const res = await fetch("/api/follow-up");
+      if (!res.ok) return;
       const data = (await res.json()) as { items: HistoryItem[] };
       setHistory(data.items || []);
-    } catch { /* ignore */ }
+    } catch {
+      // O histórico não deve impedir a criação de um novo follow-up.
+    }
+  }, []);
+
+  useEffect(() => {
+    const pendingContext = sessionStorage.getItem("alda:followup-context");
+    if (pendingContext) {
+      setContext(pendingContext);
+      sessionStorage.removeItem("alda:followup-context");
+      toast("Resumo carregado. Já pode gerar o follow-up.");
+    }
   }, []);
 
   useEffect(() => {
@@ -39,6 +53,11 @@ export default function FollowupPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!context.trim()) {
+      toast("Informe o resumo ou contexto da reunião.", "error");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/follow-up", {
@@ -46,10 +65,20 @@ export default function FollowupPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ context }),
       });
-      const data = (await res.json()) as { followup: string };
+      const data = (await res.json()) as { followup?: string; error?: string };
+
+      if (!res.ok || !data.followup) {
+        throw new Error(data.error || "Não foi possível gerar o follow-up.");
+      }
+
       setFollowup(data.followup);
-      toast("Follow-up gerado!");
-      loadHistory();
+      toast("Follow-up gerado e guardado no histórico!");
+      await loadHistory();
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Erro ao gerar follow-up.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -81,16 +110,16 @@ export default function FollowupPage() {
 
   return (
     <div className="flex flex-col h-full gap-5 animate-[fade-in_0.4s_ease-out]">
-      {/* ─── Top: Input + Result side by side ─── */}
       <div className="flex flex-1 gap-5 min-h-0">
-        {/* Left: Form */}
         <div className="w-96 shrink-0 flex flex-col">
           <div className="mb-4">
             <h1 className="text-lg font-bold tracking-tight flex items-center gap-2">
               <MessageSquareReply className="h-5 w-5 text-green-500" />
               Follow-up
             </h1>
-            <p className="text-xs opacity-50 mt-1">Email ou checklist pós-reunião</p>
+            <p className="text-xs opacity-50 mt-1">
+              Email ou checklist pós-reunião
+            </p>
           </div>
 
           <form onSubmit={onSubmit} className="flex flex-1 flex-col gap-3">
@@ -100,17 +129,27 @@ export default function FollowupPage() {
               value={context}
               onChange={(e) => setContext(e.target.value)}
             />
-            <LoadingButton loading={loading} label="Gerar follow-up" loadingLabel="Gerando..." />
+            <LoadingButton
+              loading={loading}
+              label="Gerar follow-up"
+              loadingLabel="Gerando..."
+              disabled={!context.trim()}
+            />
           </form>
         </div>
 
-        {/* Right: Result */}
         <section className="flex-1 flex flex-col min-w-0">
           <div className="mb-4 flex items-center gap-2">
             <Send className="h-4 w-4 text-green-500" />
-            <h2 className="text-sm font-semibold uppercase opacity-60">Resultado</h2>
+            <h2 className="text-sm font-semibold uppercase opacity-60">
+              Resultado
+            </h2>
             <div className="ml-auto">
-              <ExportButtons title="Follow-up" content={followup} filename="alda-followup" />
+              <ExportButtons
+                title="Follow-up"
+                content={followup}
+                filename="alda-followup"
+              />
             </div>
           </div>
 
@@ -126,22 +165,27 @@ export default function FollowupPage() {
             )}
           </div>
 
-          {/* Action buttons */}
           {followup && (
             <div className="mt-3 flex gap-2">
-              <button onClick={onCopy}
+              <button
+                type="button"
+                onClick={onCopy}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 <Copy className="h-3 w-3" />
                 {copied ? "Copiado!" : "Copiar"}
               </button>
-              <button onClick={() => onDownload(followup)}
+              <button
+                type="button"
+                onClick={() => onDownload(followup)}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 <Download className="h-3 w-3" />
                 .md
               </button>
-              <button onClick={onEmail}
+              <button
+                type="button"
+                onClick={onEmail}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 <Mail className="h-3 w-3" />
@@ -152,12 +196,13 @@ export default function FollowupPage() {
         </section>
       </div>
 
-      {/* ─── Bottom: History bar ─── */}
       {history.length > 0 && (
         <section className="shrink-0">
           <div className="mb-2 flex items-center gap-2">
             <Clock className="h-3.5 w-3.5 opacity-40" />
-            <h2 className="text-xs font-semibold uppercase opacity-40">Histórico ({history.length})</h2>
+            <h2 className="text-xs font-semibold uppercase opacity-40">
+              Histórico ({history.length})
+            </h2>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-1 styled-scroll">
             {history.map((item) => (
@@ -165,19 +210,31 @@ export default function FollowupPage() {
                 key={item.id}
                 className="shrink-0 w-64 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-3 hover:border-blue-400/50 transition-colors cursor-pointer group"
                 onClick={() => {
+                  setContext(item.context);
                   setFollowup(item.followup);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
               >
                 <p className="text-[10px] opacity-40 mb-1">
-                  {new Date(item.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  {new Date(item.created_at).toLocaleDateString("pt-BR", {
+                    day: "2-digit",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                   {" · "}
                   <span className="text-blue-500">{item.provider}</span>
                 </p>
-                <p className="text-xs line-clamp-2 opacity-70 group-hover:opacity-100 transition-opacity">{item.context}</p>
+                <p className="text-xs line-clamp-2 opacity-70 group-hover:opacity-100 transition-opacity">
+                  {item.context}
+                </p>
                 <div className="mt-2 flex gap-1">
                   <button
-                    onClick={(e) => { e.stopPropagation(); onDownload(item.followup, `followup-${item.id}.md`); }}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDownload(item.followup, `followup-${item.id}.md`);
+                    }}
                     className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
                     title="Download"
                   >
