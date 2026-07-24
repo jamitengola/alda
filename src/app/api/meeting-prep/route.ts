@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, getProviderLabel } from "@/lib/ai-provider";
+import { readJsonObject, readString } from "@/lib/api-request";
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as {
-    topic?: string;
-    participants?: string;
-    objective?: string;
-    notes?: string;
-  };
+  const body = await readJsonObject(request);
 
-  const topic = body.topic?.trim() ?? "";
-  const participants = body.participants?.trim() ?? "";
-  const objective = body.objective?.trim() ?? "";
-  const notes = body.notes?.trim() ?? "";
+  if (!body) {
+    return NextResponse.json({ error: "Payload JSON inválido." }, { status: 400 });
+  }
+
+  const topic = readString(body.topic);
+  const participants = readString(body.participants);
+  const objective = readString(body.objective);
+  const notes = readString(body.notes);
 
   if (!topic) {
     return NextResponse.json({ briefing: "Informe pelo menos o tema da reunião." });
