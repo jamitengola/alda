@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, getProviderLabel } from "@/lib/ai-provider";
+import { readJsonObject, readString } from "@/lib/api-request";
 
 type CoachingMode =
   | "coaching"
@@ -9,14 +10,29 @@ type CoachingMode =
   | "pitch"
   | "negotiation";
 
-export async function POST(request: NextRequest) {
-  const body = (await request.json()) as {
-    transcript?: string;
-    mode?: CoachingMode;
-  };
+const coachingModes: CoachingMode[] = [
+  "coaching",
+  "objection",
+  "question",
+  "sales",
+  "pitch",
+  "negotiation",
+];
 
-  const transcript = body.transcript?.trim() ?? "";
-  const mode = body.mode ?? "coaching";
+function normalizeMode(value: unknown): CoachingMode {
+  const mode = readString(value) as CoachingMode;
+  return coachingModes.includes(mode) ? mode : "coaching";
+}
+
+export async function POST(request: NextRequest) {
+  const body = await readJsonObject(request);
+
+  if (!body) {
+    return NextResponse.json({ error: "Payload JSON inválido." }, { status: 400 });
+  }
+
+  const transcript = readString(body.transcript);
+  const mode = normalizeMode(body.mode);
 
   if (!transcript) {
     return NextResponse.json({
@@ -127,9 +143,9 @@ Só ofereça uma concessão em troca de algo equivalente, como prazo, volume, co
   };
 
   const suggestion = await generateText({
-    system: systemPrompts[mode] || systemPrompts.coaching,
+    system: systemPrompts[mode],
     user: `Transcrição em tempo real: "${transcript}"`,
-    fallback: (fallbackMessages[mode] || fallbackMessages.coaching)(contextExcerpt),
+    fallback: fallbackMessages[mode](contextExcerpt),
   });
 
   return NextResponse.json({

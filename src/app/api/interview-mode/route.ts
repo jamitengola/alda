@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
 import { generateText } from "@/lib/ai-provider";
+import { readJsonObject, readString } from "@/lib/api-request";
 
 export async function POST(request: Request) {
-  const { topic, action, question, answer } = (await request.json()) as {
-    topic?: string;
-    action: "generate" | "feedback";
-    question?: string;
-    answer?: string;
-  };
+  const body = await readJsonObject(request);
 
-  const safeTopic = topic?.trim() || "o tema selecionado";
+  if (!body) {
+    return NextResponse.json({ error: "Payload JSON inválido." }, { status: 400 });
+  }
+
+  const action = readString(body.action);
+
+  if (action !== "generate" && action !== "feedback") {
+    return NextResponse.json({ error: "Ação inválida." }, { status: 400 });
+  }
+
+  const topic = readString(body.topic);
+  const question = readString(body.question);
+  const answer = readString(body.answer);
+  const safeTopic = topic || "o tema selecionado";
 
   if (action === "generate") {
     const mockQuestions = [
@@ -38,8 +47,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ questions });
   }
 
-  const answerWordCount = answer?.trim().split(/\s+/).filter(Boolean).length ?? 0;
-  const questionContext = question?.trim() || "a pergunta apresentada";
+  const answerWordCount = answer.split(/\s+/).filter(Boolean).length;
+  const questionContext = question || "a pergunta apresentada";
 
   const fallback = `## Pontos fortes
 - A resposta aborda diretamente ${questionContext}.

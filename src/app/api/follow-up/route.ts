@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, getProviderLabel } from "@/lib/ai-provider";
 import { saveFollowup, listFollowups } from "@/lib/db";
+import { readJsonObject, readString } from "@/lib/api-request";
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as { context?: string };
-  const context = body.context?.trim() ?? "";
+  const body = await readJsonObject(request);
+
+  if (!body) {
+    return NextResponse.json({ error: "Payload JSON inválido." }, { status: 400 });
+  }
+
+  const context = readString(body.context);
+
+  if (!context) {
+    return NextResponse.json(
+      { error: "Informe o resumo ou contexto da reunião." },
+      { status: 400 },
+    );
+  }
 
   const fallback = [
     "Assunto: Follow-up da reunião e próximos passos",
@@ -14,7 +27,7 @@ export async function POST(request: NextRequest) {
     "Obrigado pela reunião. Para mantermos o alinhamento, segue um resumo objetivo do que deve ser validado:",
     "",
     "Contexto principal:",
-    context || "A reunião tratou do alinhamento de prioridades e definição dos próximos passos.",
+    context,
     "",
     "Decisões a confirmar:",
     "- Validar o objetivo e o resultado esperado.",
@@ -36,14 +49,14 @@ export async function POST(request: NextRequest) {
 
   const aiFollowup = await generateText({
     system:
-      "Você escreve emails de follow-up profissionais em português, curtos e orientados a ação.",
-    user: `Gere um follow-up com base neste contexto:\n${context || "Sem contexto"}`,
+      "Você escreve emails de follow-up profissionais em português, curtos e orientados a ação. Inclua assunto, contexto, decisões confirmadas ou pendentes, ações, responsáveis e prazos quando estiverem disponíveis. Não invente nomes, decisões ou datas.",
+    user: `Gere um follow-up com base neste contexto:\n${context}`,
     fallback,
   });
 
-  saveFollowup(context, aiFollowup, provider);
+  const id = saveFollowup(context, aiFollowup, provider);
 
-  return NextResponse.json({ followup: aiFollowup, provider });
+  return NextResponse.json({ id, followup: aiFollowup, provider });
 }
 
 export async function GET() {

@@ -2,7 +2,20 @@
 
 ALDA is an open source AI meeting coach for preparation, real-time guidance, transcription, summaries and follow-up automation. It is designed for professionals, developers and small teams who want to improve meeting outcomes without depending on closed productivity suites.
 
-> Status: early open source prototype. Contributions, issues and ideas are welcome.
+> Status: the MVP core functionality is complete. Installable releases, code signing and the public demo are still being prepared.
+
+## MVP core status
+
+The essential product journey is implemented and covered by automated tests:
+
+- meeting preparation and interview practice;
+- live coaching for sales, pitch, negotiation, objections and difficult questions;
+- transcription and structured meeting summaries;
+- direct summary-to-follow-up workflow without placing meeting content in the URL;
+- local persistence and unified history for summaries, follow-ups and coaching sessions;
+- safe API validation and deterministic mock mode without external API keys.
+
+See [MVP core acceptance criteria](docs/mvp-core.md) for the exact definition of functional completion and the items that remain outside the MVP core.
 
 ## Demo
 
@@ -24,6 +37,7 @@ The project is especially useful as a reusable base for Portuguese-speaking and 
 - **Meeting preparation** — strategic briefing and interview/meeting simulation.
 - **Transcription and summaries** — capture meeting content and generate clear summaries.
 - **Automatic follow-up** — draft emails, checklists and next actions after meetings.
+- **Unified history** — recover summaries, follow-ups and coaching sessions.
 - **Performance tracking** — measure improvement across coaching sessions.
 - **Local and cloud AI** — use mock mode, local Ollama models or OpenAI-compatible providers.
 - **Desktop mode** — Electron shell for a lightweight desktop experience.
@@ -40,9 +54,11 @@ The project is especially useful as a reusable base for Portuguese-speaking and 
 
 ## Documentation
 
+- [MVP core acceptance criteria](docs/mvp-core.md)
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
 - [Deployment guide](docs/deployment.md)
+- [Docker guide](docs/docker.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 
@@ -58,7 +74,7 @@ cd alda
 ### 2. Install dependencies
 
 ```bash
-npm install
+npm ci
 ```
 
 ### 3. Configure environment variables
